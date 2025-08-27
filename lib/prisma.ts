@@ -9,6 +9,7 @@ const createPrisma = () =>
   new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
     datasources: { db: { url: accelerateUrl } },
+
   }).$extends(withAccelerate())
 
 type PrismaAcceleratedClient = ReturnType<typeof createPrisma>
