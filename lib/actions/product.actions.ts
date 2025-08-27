@@ -640,11 +640,12 @@ export async function getHomePageData() {
       const processProductForCard = (product: any) => ({
         name: product.name,
         slug: product.slug,
-        image: product.images[0],
-        price: product.price,
-        listPrice: product.listPrice,
-        avgRating: product.avgRating,
-        numReviews: product.numReviews,
+        image: Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : '',
+        images: Array.isArray(product.images) ? product.images : [],
+        price: Number(product.price),
+        listPrice: Number(product.listPrice),
+        avgRating: Number(product.avgRating),
+        numReviews: Number(product.numReviews),
       })
       
       const processedNewArrivals = newArrivals.map(processProductForCard)
@@ -654,8 +655,8 @@ export async function getHomePageData() {
       console.log(`✅ Database mode: fetched all data - deals: ${todaysDeals.length}, bestSellers: ${bestSellingProducts.length}, categories: ${categoryList.length}, newArrivals: ${processedNewArrivals.length}, featureds: ${processedFeatureds.length}, bestSellers: ${processedBestSellers.length}`)
       
       return {
-        todaysDeals: JSON.parse(JSON.stringify(todaysDeals)),
-        bestSellingProducts: JSON.parse(JSON.stringify(bestSellingProducts)),
+        todaysDeals: processedNewArrivals, // Use processed data instead of raw
+        bestSellingProducts: processedBestSellers, // Use processed data instead of raw
         categories: categoryList,
         newArrivals: processedNewArrivals,
         featureds: processedFeatureds,
@@ -746,11 +747,12 @@ export async function getTodaysDeals() {
     const result = products.map((product: any) => ({
       name: product.name,
       slug: product.slug,
-      image: product.images[0],
-      price: product.price,
-      listPrice: product.listPrice,
-      avgRating: product.avgRating,
-      numReviews: product.numReviews,
+      image: Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : '',
+      images: Array.isArray(product.images) ? product.images : [],
+      price: Number(product.price),
+      listPrice: Number(product.listPrice),
+      avgRating: Number(product.avgRating),
+      numReviews: Number(product.numReviews),
     }))
     
     // Cache the result
@@ -795,11 +797,12 @@ export async function getBestSellingProducts() {
     const result = products.map((product: any) => ({
       name: product.name,
       slug: product.slug,
-      image: product.images[0],
-      price: product.price,
-      listPrice: product.listPrice,
-      avgRating: product.avgRating,
-      numReviews: product.numReviews,
+      image: Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : '',
+      images: Array.isArray(product.images) ? product.images : [],
+      price: Number(product.price),
+      listPrice: Number(product.listPrice),
+      avgRating: Number(product.avgRating),
+      numReviews: Number(product.numReviews),
     }))
     
     // Cache the result
