@@ -1,36 +1,27 @@
 import { PrismaClient } from '@prisma/client'
+import { withAccelerate } from '@prisma/extension-accelerate'
 
-// Two Prisma clients:
-// - prisma: pooled (DATABASE_URL) for most queries, safe for serverless
-// - prismaDirect: direct (DIRECT_DATABASE_URL) for heavy read queries to avoid pool limits
+// Use DATABASE_URL (Accelerate endpoint) at runtime
+const accelerateUrl = process.env.DATABASE_URL
+
+// Create a factory so we can infer the extended type
+const createPrisma = () =>
+  new PrismaClient({
+    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+    datasources: { db: { url: accelerateUrl } },
+  }).$extends(withAccelerate())
+
+type PrismaAcceleratedClient = ReturnType<typeof createPrisma>
 
 declare global {
   // eslint-disable-next-line no-var
-  var __prisma__: PrismaClient | undefined
-  // eslint-disable-next-line no-var
-  var __prismaDirect__: PrismaClient | undefined
+  var __prisma__: PrismaAcceleratedClient | undefined
 }
 
-const pooledUrl = process.env.DATABASE_URL
-const directUrl = process.env.DIRECT_DATABASE_URL || process.env.DATABASE_URL
+const prismaClient: PrismaAcceleratedClient = global.__prisma__ ?? createPrisma()
 
-// Pooled client (default)
-const prismaClient = global.__prisma__ ?? new PrismaClient({
-  log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
-  datasources: { db: { url: pooledUrl } },
-})
-
-// Direct client for heavy queries
-const prismaDirectClient = global.__prismaDirect__ ?? new PrismaClient({
-  log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
-  datasources: { db: { url: directUrl } },
-})
-
-// Cache in dev to prevent hot-reload duplication
 if (process.env.NODE_ENV !== 'production') {
   global.__prisma__ = prismaClient
-  global.__prismaDirect__ = prismaDirectClient
 }
 
 export const prisma = prismaClient
-export const prismaDirect = prismaDirectClient

@@ -58,4 +58,4 @@ export const closeGlobalPrisma = async () => {
 
 // Export initialization functions
 export { initializeDatabase } from './init'
-export { prisma, prismaDirect } from '@/lib/prisma'
+export { prisma } from '@/lib/prisma'

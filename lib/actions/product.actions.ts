@@ -1,6 +1,6 @@
 'use server'
 
-import { prisma, prismaDirect } from '@/lib/prisma'
+import { prisma } from '@/lib/prisma'
 import data from '@/lib/data'
 import { revalidatePath } from 'next/cache'
 import { formatError } from '../utils'
@@ -220,8 +220,8 @@ export async function getAllCategories() {
     // Check cache first
     const cachedCategories = getCachedData<string[]>('categories', async () => {
       try {
-        // Heavy read: use direct client to avoid pooled latency
-        const categories = await prismaDirect.product.findMany({
+        // Use pooled client + caching for stability and performance
+        const categories = await prisma.product.findMany({
           where: { isPublished: true },
           select: { category: true },
           distinct: ['category']
@@ -240,8 +240,8 @@ export async function getAllCategories() {
     
     // If not cached, fetch and cache
     try {
-      // Heavy read: use direct client to avoid pooled latency
-      const categories = await prismaDirect.product.findMany({
+      // Use pooled client + caching for stability and performance
+      const categories = await prisma.product.findMany({
         where: { isPublished: true },
         select: { category: true },
         distinct: ['category']
@@ -561,8 +561,8 @@ export async function getHomePageData() {
     console.log('🔍 getHomePageData called - fetching all homepage data in single connection')
     try {
       // Fetch data with reduced concurrency to avoid exhausting DB connections
-      // Heavy read: use direct client for large lists
-      const todaysDeals = await prismaDirect.product.findMany({
+      // Use pooled client with pagination/selects
+      const todaysDeals = await prisma.product.findMany({
         where: {
           tags: { has: 'best-seller' },
           isPublished: true,
@@ -571,8 +571,7 @@ export async function getHomePageData() {
         take: 10
       })
 
-      // Heavy read: use direct client for large lists
-      const bestSellingProducts = await prismaDirect.product.findMany({
+      const bestSellingProducts = await prisma.product.findMany({
         where: {
           tags: { has: 'best-seller' },
           isPublished: true,
@@ -581,14 +580,13 @@ export async function getHomePageData() {
         take: 10
       })
 
-      // Heavy read: use direct client for distinct categories
-      const categories = await prismaDirect.product.findMany({
+      const categories = await prisma.product.findMany({
         where: { isPublished: true },
         select: { category: true },
         distinct: ['category']
       })
 
-      const newArrivals = await prismaDirect.product.findMany({
+      const newArrivals = await prisma.product.findMany({
         where: {
           tags: { has: 'featured' },
           isPublished: true,
@@ -606,7 +604,7 @@ export async function getHomePageData() {
         }
       })
 
-      const featureds = await prismaDirect.product.findMany({
+      const featureds = await prisma.product.findMany({
         where: {
           tags: { has: 'featured' },
           isPublished: true,
@@ -624,7 +622,7 @@ export async function getHomePageData() {
         }
       })
 
-      const bestSellers = await prismaDirect.product.findMany({
+      const bestSellers = await prisma.product.findMany({
         where: {
           tags: { has: 'best-seller' },
           isPublished: true,
