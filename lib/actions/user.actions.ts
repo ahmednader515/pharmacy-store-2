@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs'
 import { auth, signIn, signOut } from '@/auth'
 import { IUserName, IUserSignIn, IUserSignUp } from '@/types'
 import { UserSignUpSchema, UserUpdateSchema } from '../validator'
-import { connectToDatabase } from '../db'
+import { prisma } from '../db'
 import { formatError } from '../utils'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
@@ -14,7 +14,6 @@ import data from '../data'
 // CREATE
 export async function registerUser(userSignUp: IUserSignUp) {
   try {
-    const connection = await connectToDatabase()
     const user = await UserSignUpSchema.parseAsync({
       name: userSignUp.name,
       phone: userSignUp.phone,
@@ -22,14 +21,10 @@ export async function registerUser(userSignUp: IUserSignUp) {
       confirmPassword: userSignUp.confirmPassword,
     })
 
-    // Require real database connection
-
-    if (!connection.prisma) {
-      return { success: false, error: 'Database connection failed' }
-    }
+    // Always use database
 
     // Check if user already exists
-    const existingUser = await connection.prisma.user.findUnique({
+    const existingUser = await prisma.user.findUnique({
       where: { phone: user.phone }
     })
 
@@ -37,7 +32,7 @@ export async function registerUser(userSignUp: IUserSignUp) {
       return { success: false, error: 'An account with this phone number already exists. Please sign in instead.' }
     }
 
-    await connection.prisma.user.create({
+    await prisma.user.create({
       data: {
         name: user.name,
         phone: user.phone,
@@ -68,15 +63,7 @@ export async function registerUser(userSignUp: IUserSignUp) {
 
 export async function deleteUser(id: string) {
   try {
-    const connection = await connectToDatabase()
-    
-    // Require real database connection
-    
-    if (!connection.prisma) {
-      return { success: false, message: 'Database connection failed' }
-    }
-    
-    const res = await connection.prisma.user.delete({
+    const res = await prisma.user.delete({
       where: { id }
     })
     if (!res) throw new Error('User not found')
@@ -93,15 +80,7 @@ export async function deleteUser(id: string) {
 
 export async function updateUser(user: z.infer<typeof UserUpdateSchema>) {
   try {
-    const connection = await connectToDatabase()
-    
-    // Require real database connection
-    
-    if (!connection.prisma) {
-      return { success: false, message: 'Database connection failed' }
-    }
-    
-    const updatedUser = await connection.prisma.user.update({
+    const updatedUser = await prisma.user.update({
       where: { id: user._id },
       data: {
         name: user.name,
@@ -128,15 +107,7 @@ export async function updateUserName(user: IUserName) {
       return { success: false, message: 'يجب تسجيل الدخول أولاً' }
     }
 
-    const connection = await connectToDatabase()
-    
-    // Mock mode removed: always use database
-    
-    if (!connection.prisma) {
-      return { success: false, message: 'فشل الاتصال بقاعدة البيانات' }
-    }
-    
-    const updatedUser = await connection.prisma.user.update({
+    const updatedUser = await prisma.user.update({
       where: { id: session?.user?.id },
       data: {
         name: user.name,
@@ -160,15 +131,7 @@ export async function updateUserPhone(user: { phone: string }) {
       return { success: false, message: 'يجب تسجيل الدخول أولاً' }
     }
 
-    const connection = await connectToDatabase()
-    
-    // Mock mode removed: always use database
-    
-    if (!connection.prisma) {
-      return { success: false, message: 'فشل الاتصال بقاعدة البيانات' }
-    }
-    
-    const updatedUser = await connection.prisma.user.update({
+    const updatedUser = await prisma.user.update({
       where: { id: session?.user?.id },
       data: {
         phone: user.phone,
@@ -195,16 +158,8 @@ export async function updateUserPassword(user: {
       return { success: false, message: 'يجب تسجيل الدخول أولاً' }
     }
 
-    const connection = await connectToDatabase()
-    
-    // Mock mode removed: always use database
-    
-    if (!connection.prisma) {
-      return { success: false, message: 'فشل الاتصال بقاعدة البيانات' }
-    }
-    
     // First verify the current password
-    const currentUser = await connection.prisma.user.findUnique({
+    const currentUser = await prisma.user.findUnique({
       where: { id: session?.user?.id }
     })
     
@@ -221,7 +176,7 @@ export async function updateUserPassword(user: {
     const hashedNewPassword = await bcrypt.hash(user.newPassword, 5)
     
     // Update the password
-    const updatedUser = await connection.prisma.user.update({
+    const updatedUser = await prisma.user.update({
       where: { id: session?.user?.id },
       data: {
         password: hashedNewPassword,
@@ -454,29 +409,18 @@ export async function getAllUsers({
   limit?: number
   page: number
 }) {
-  const connection = await connectToDatabase()
   const {
     common: { pageSize },
   } = data.settings[0];
   limit = limit || pageSize
 
-  // Mock mode removed: always use database
-
-  if (!connection.prisma) {
-    console.warn('Database connection failed in getAllUsers')
-    return {
-      data: [],
-      totalPages: 0,
-    }
-  }
-
   const skipAmount = (Number(page) - 1) * limit
-  const users = await connection.prisma.user.findMany({
+  const users = await prisma.user.findMany({
     orderBy: { createdAt: 'desc' },
     skip: skipAmount,
     take: limit
   })
-  const usersCount = await connection.prisma.user.count()
+  const usersCount = await prisma.user.count()
   return {
     data: JSON.parse(JSON.stringify(users)),
     totalPages: Math.ceil(usersCount / limit),
@@ -484,15 +428,7 @@ export async function getAllUsers({
 }
 
 export async function getUserById(userId: string) {
-  const connection = await connectToDatabase()
-  
-  // Mock mode removed: always use database
-  
-  if (!connection.prisma) {
-    return null
-  }
-  
-  const user = await connection.prisma.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: { id: userId }
   })
   if (!user) throw new Error('User not found')

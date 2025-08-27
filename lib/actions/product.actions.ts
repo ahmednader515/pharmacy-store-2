@@ -1,6 +1,6 @@
 'use server'
 
-import { connectToDatabase } from '@/lib/db'
+import { prisma } from '@/lib/db'
 import data from '@/lib/data'
 import { revalidatePath } from 'next/cache'
 import { formatError } from '../utils'
@@ -35,16 +35,10 @@ const setCachedData = <T>(cacheKey: string, data: T): void => {
 export async function createProduct(data: IProductInput) {
   try {
     const product = ProductInputSchema.parse(data)
-    const connection = await connectToDatabase()
-    
-    // Mock mode removed: always use database
-    
-    if (!connection.prisma) {
-      return { success: false, message: 'Database connection failed' }
-    }
+    // Always use database
     
     const { reviews, ...productData } = product
-    await connection.prisma.product.create({
+    await prisma.product.create({
       data: {
         name: productData.name,
         slug: productData.slug,
@@ -80,17 +74,11 @@ export async function createProduct(data: IProductInput) {
 export async function updateProduct(data: z.infer<typeof ProductUpdateSchema>) {
   try {
     const product = ProductUpdateSchema.parse(data)
-    const connection = await connectToDatabase()
-    
-    // Mock mode removed: always use database
-    
-    if (!connection.prisma) {
-      return { success: false, message: 'Database connection failed' }
-    }
+    // Always use database
     
     const { reviews, _id, ...productData } = product
     
-    await connection.prisma.product.update({
+    await prisma.product.update({
       where: { id: _id },
       data: {
         name: productData.name,
@@ -126,15 +114,7 @@ export async function updateProduct(data: z.infer<typeof ProductUpdateSchema>) {
 // DELETE
 export async function deleteProduct(id: string) {
   try {
-    const connection = await connectToDatabase()
-    
-    // Mock mode removed: always use database
-    
-    if (!connection.prisma) {
-      return { success: false, message: 'Database connection failed' }
-    }
-    
-    const res = await connection.prisma.product.delete({
+    const res = await prisma.product.delete({
       where: { id }
     })
     if (!res) throw new Error('Product not found')
@@ -152,15 +132,7 @@ export async function deleteProduct(id: string) {
 // GET ONE PRODUCT BY ID
 export async function getProductById(productId: string) {
   try {
-    const connection = await connectToDatabase()
-    // Mock mode removed: always use database
-    
-    if (!connection.prisma) {
-      console.warn('Database connection failed in getProductById')
-      return null
-    }
-    
-    const product = await connection.prisma.product.findUnique({
+    const product = await prisma.product.findUnique({
       where: { id: productId }
     })
     if (!product) return null
@@ -184,24 +156,13 @@ export async function getAllProductsForAdmin({
   limit?: number
 }) {
   try {
-    const connection = await connectToDatabase()
+    // Use Prisma directly
     const {
       common: { pageSize },
     } = data.settings[0];
     limit = limit || pageSize
 
     // Mock mode removed: always use database
-
-    if (!connection.prisma) {
-      console.warn('Database connection failed in getAllProductsForAdmin')
-      return {
-        products: [],
-        totalPages: 0,
-        totalProducts: 0,
-        from: 0,
-        to: 0,
-      }
-    }
 
     // Build Prisma where clause
     const where: any = {}
@@ -225,13 +186,13 @@ export async function getAllProductsForAdmin({
     const skip = limit * (Number(page) - 1)
     
     const [products, countProducts] = await Promise.all([
-      connection.prisma.product.findMany({
+      prisma.product.findMany({
         where,
         orderBy,
         skip,
         take: limit,
       }),
-      connection.prisma.product.count({ where })
+      prisma.product.count({ where })
     ])
 
     return {
@@ -258,15 +219,8 @@ export async function getAllCategories() {
     console.log('🔍 getAllCategories called')
     // Check cache first
     const cachedCategories = getCachedData<string[]>('categories', async () => {
-      const connection = await connectToDatabase()
-      
-      if (!connection.prisma) {
-        console.warn('Database connection failed in getAllCategories cache')
-        return []
-      }
-      
       try {
-        const categories = await connection.prisma.product.findMany({
+        const categories = await prisma.product.findMany({
           where: { isPublished: true },
           select: { category: true },
           distinct: ['category']
@@ -284,16 +238,8 @@ export async function getAllCategories() {
     }
     
     // If not cached, fetch and cache
-    const connection = await connectToDatabase()
-    console.log(`📡 Database connection established`)
-    
-    if (!connection.prisma) {
-      console.warn('Database connection failed in getAllCategories')
-      return []
-    }
-    
     try {
-      const categories = await connection.prisma.product.findMany({
+      const categories = await prisma.product.findMany({
         where: { isPublished: true },
         select: { category: true },
         distinct: ['category']
@@ -320,15 +266,7 @@ export async function getProductsForCard({
 }) {
   try {
     console.log(`🔍 getProductsForCard called with tag: ${tag}, limit: ${limit}`)
-    const connection = await connectToDatabase()
-    console.log(`📡 Database connection established`)
-    
-    if (!connection.prisma) {
-      console.warn('Database connection failed in getProductsForCard')
-      return []
-    }
-    
-    const products = await connection.prisma.product.findMany({
+    const products = await prisma.product.findMany({
       where: {
         tags: { has: tag },
         isPublished: true
@@ -367,16 +305,8 @@ export async function getProductsByTag({
 }) {
   try {
     console.log(`🔍 getProductsByTag called with tag: ${tag}, limit: ${limit}`)
-    const connection = await connectToDatabase()
-    console.log(`📡 Database connection established`)
-    
-    if (!connection.prisma) {
-      console.warn('Database connection failed in getProductsByTag')
-      return []
-    }
-    
     try {
-      const products = await connection.prisma.product.findMany({
+      const products = await prisma.product.findMany({
         where: {
           tags: { has: tag },
           isPublished: true,
@@ -398,23 +328,11 @@ export async function getProductsByTag({
 // GET ONE PRODUCT BY SLUG
 export async function getProductBySlug(slug: string) {
   try {
-    const connection = await connectToDatabase()
-    
-    if (!connection.prisma) {
-      console.warn('Database connection failed in getProductBySlug')
-      return null
-    }
-    
-    try {
-      const product = await connection.prisma.product.findFirst({
-        where: { slug, isPublished: true }
-      })
-      if (!product) return null
-      return JSON.parse(JSON.stringify(product))
-    } catch (error) {
-      console.error('Database error in getProductBySlug:', error)
-      return null
-    }
+    const product = await prisma.product.findFirst({
+      where: { slug, isPublished: true }
+    })
+    if (!product) return null
+    return JSON.parse(JSON.stringify(product))
   } catch (error) {
     console.error('Error in getProductBySlug:', error)
     return null
@@ -442,18 +360,10 @@ export async function getRelatedProductsByCategory({
 
     // Using real database connection
 
-    if (!connection.prisma) {
-      console.warn('Database connection failed in getRelatedProductsByCategory')
-      return {
-        data: [],
-        totalPages: 0,
-      }
-    }
-
     const skipAmount = (Number(page) - 1) * limit
     
     const [products, productsCount] = await Promise.all([
-      connection.prisma.product.findMany({
+      prisma.product.findMany({
         where: {
           isPublished: true,
           category,
@@ -463,7 +373,7 @@ export async function getRelatedProductsByCategory({
         skip: skipAmount,
         take: limit,
       }),
-      connection.prisma.product.count({
+      prisma.product.count({
         where: {
           isPublished: true,
           category,
@@ -506,23 +416,12 @@ export async function getAllProducts({
   sort?: string
 }) {
   try {
-    const connection = await connectToDatabase()
+    // Use Prisma directly
     const {
       common: { pageSize },
     } = data.settings[0];
     limit = limit || pageSize
     
-
-    if (!connection.prisma) {
-      console.warn('Database connection failed in getAllProducts')
-      return {
-        products: [],
-        totalPages: 0,
-        totalProducts: 0,
-        from: 0,
-        to: 0,
-      }
-    }
 
     // Build Prisma where clause
     const where: any = { isPublished: true }
@@ -563,13 +462,13 @@ export async function getAllProducts({
     const skip = limit * (Number(page) - 1)
     
     const [products, countProducts] = await Promise.all([
-      connection.prisma.product.findMany({
+      prisma.product.findMany({
         where,
         orderBy,
         skip,
         take: limit,
       }),
-      connection.prisma.product.count({ where })
+      prisma.product.count({ where })
     ])
 
     return {
@@ -595,17 +494,8 @@ export async function getAllTags() {
   try {
     // Check cache first
     const cachedTags = getCachedData<string[]>('tags', async () => {
-      const connection = await connectToDatabase()
-      
-      // Always use database
-      
-      if (!connection.prisma) {
-        console.warn('Database connection failed in getAllTags cache')
-        return []
-      }
-      
       try {
-        const products = await connection.prisma.product.findMany({
+        const products = await prisma.product.findMany({
           where: { isPublished: true },
           select: { tags: true }
         })
@@ -633,15 +523,8 @@ export async function getAllTags() {
     }
     
     // If not cached, fetch and cache
-    const connection = await connectToDatabase()
-    
-    if (!connection.prisma) {
-      console.warn('Database connection failed in getAllTags')
-      return []
-    }
-    
     try {
-      const products = await connection.prisma.product.findMany({
+      const products = await prisma.product.findMany({
         where: { isPublished: true },
         select: { tags: true }
       })
@@ -674,108 +557,85 @@ export async function getAllTags() {
 export async function getHomePageData() {
   try {
     console.log('🔍 getHomePageData called - fetching all homepage data in single connection')
-    const connection = await connectToDatabase()
-    console.log(`📡 Database connection established`)
-    
-    if (!connection.prisma) {
-      console.warn('Database connection failed in getHomePageData')
-      return {
-        todaysDeals: [],
-        bestSellingProducts: [],
-        categories: [],
-        newArrivals: [],
-        featureds: [],
-        bestSellers: []
-      }
-    }
-    
     try {
-      // Fetch all data in parallel using a single database connection
-      const [todaysDeals, bestSellingProducts, categories, newArrivals, featureds, bestSellers] = await Promise.all([
-        // Today's deals (best-seller tag)
-        connection.prisma.product.findMany({
-          where: {
-            tags: { has: 'best-seller' },
-            isPublished: true,
-          },
-          orderBy: { createdAt: 'desc' },
-          take: 10
-        }),
-        
-        // Best selling products (best-seller tag)
-        connection.prisma.product.findMany({
-          where: {
-            tags: { has: 'best-seller' },
-            isPublished: true,
-          },
-          orderBy: { createdAt: 'desc' },
-          take: 10
-        }),
-        
-        // Categories
-        connection.prisma.product.findMany({
-          where: { isPublished: true },
-          select: { category: true },
-          distinct: ['category']
-        }),
-        
-        // New arrivals (featured tag)
-        connection.prisma.product.findMany({
-          where: {
-            tags: { has: 'featured' },
-            isPublished: true,
-          },
-          orderBy: { createdAt: 'desc' },
-          take: 4,
-          select: {
-            name: true,
-            slug: true,
-            images: true,
-            price: true,
-            listPrice: true,
-            avgRating: true,
-            numReviews: true,
-          }
-        }),
-        
-        // Featured products (featured tag)
-        connection.prisma.product.findMany({
-          where: {
-            tags: { has: 'featured' },
-            isPublished: true,
-          },
-          orderBy: { createdAt: 'desc' },
-          take: 4,
-          select: {
-            name: true,
-            slug: true,
-            images: true,
-            price: true,
-            listPrice: true,
-            avgRating: true,
-            numReviews: true,
-          }
-        }),
-        
-        // Best sellers (best-seller tag)
-        connection.prisma.product.findMany({
-          where: {
-            tags: { has: 'best-seller' },
-            isPublished: true,
-          },
-          orderBy: { createdAt: 'desc' },
-          take: 4,
-          select: {
-            name: true,
-            slug: true,
-            images: true,
-            price: true,
-            listPrice: true,
-            avgRating: true,
-            numReviews: true,
-          }
-        })
-      ])
+      // Fetch data with reduced concurrency to avoid exhausting DB connections
+      const todaysDeals = await prisma.product.findMany({
+        where: {
+          tags: { has: 'best-seller' },
+          isPublished: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 10
+      })
+
+      const bestSellingProducts = await prisma.product.findMany({
+        where: {
+          tags: { has: 'best-seller' },
+          isPublished: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 10
+      })
+
+      const categories = await prisma.product.findMany({
+        where: { isPublished: true },
+        select: { category: true },
+        distinct: ['category']
+      })
+
+      const newArrivals = await prisma.product.findMany({
+        where: {
+          tags: { has: 'featured' },
+          isPublished: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 4,
+        select: {
+          name: true,
+          slug: true,
+          images: true,
+          price: true,
+          listPrice: true,
+          avgRating: true,
+          numReviews: true,
+        }
+      })
+
+      const featureds = await prisma.product.findMany({
+        where: {
+          tags: { has: 'featured' },
+          isPublished: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 4,
+        select: {
+          name: true,
+          slug: true,
+          images: true,
+          price: true,
+          listPrice: true,
+          avgRating: true,
+          numReviews: true,
+        }
+      })
+
+      const bestSellers = await prisma.product.findMany({
+        where: {
+          tags: { has: 'best-seller' },
+          isPublished: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 4,
+        select: {
+          name: true,
+          slug: true,
+          images: true,
+          price: true,
+          listPrice: true,
+          avgRating: true,
+          numReviews: true,
+        }
+      })
       
       // Process categories
       const categoryList = categories.map((c: any) => c.category).slice(0, 4)

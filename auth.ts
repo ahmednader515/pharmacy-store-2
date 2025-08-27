@@ -1,7 +1,7 @@
 import Google from 'next-auth/providers/google'
 import bcrypt from 'bcryptjs'
 import CredentialsProvider from 'next-auth/providers/credentials'
-import { connectToDatabase } from './lib/db'
+import { prisma } from './lib/db'
 import { ShippingAddress } from './types'
 
 import NextAuth, { type DefaultSession, type User } from 'next-auth'
@@ -53,18 +53,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
       async authorize(credentials) {
         try {
-          const connection = await connectToDatabase()
           if (credentials == null || !credentials.phone || typeof credentials.phone !== 'string') {
             console.log('Invalid credentials provided')
             return null
           }
 
-          if (!connection.prisma) {
-            console.log('No Prisma connection available')
-            return null
-          }
-
-          const user = await connection.prisma.user.findUnique({
+          const user = await prisma.user.findUnique({
             where: { phone: credentials.phone }
           })
 
@@ -104,19 +98,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           console.log('JWT callback - user data:', user)
           console.log('JWT callback - user.phone:', (user as { phone: string }).phone)
           if (!user.name) {
-            const connection = await connectToDatabase()
-            if (connection.prisma) {
-              try {
-                await connection.prisma.user.update({
+            try {
+              await prisma.user.update({
                   where: { id: user.id },
                   data: {
                     name: user.name || (user.phone ? user.phone : 'User'),
                     role: 'user',
                   }
                 })
-              } catch (updateError) {
-                console.error('Failed to update user:', updateError)
-              }
+            } catch (updateError) {
+              console.error('Failed to update user:', updateError)
             }
           }
           token.name = user.name || (user.phone ? user.phone : 'User')
@@ -141,16 +132,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // If we still don't have a phone number, try to get it from the database
         if (!token.phone && token.sub) {
           try {
-            const connection = await connectToDatabase()
-            if (connection.prisma) {
-              // For real database, find user by ID
-              const dbUser = await connection.prisma.user.findUnique({
-                where: { id: token.sub }
-              })
-              if (dbUser) {
-                token.phone = dbUser.phone
-                console.log('JWT callback - phone found from database:', dbUser.phone)
-              }
+            const dbUser = await prisma.user.findUnique({
+              where: { id: token.sub }
+            })
+            if (dbUser) {
+              token.phone = dbUser.phone
+              console.log('JWT callback - phone found from database:', dbUser.phone)
             }
           } catch (error) {
             console.error('Error fetching phone from database:', error)
