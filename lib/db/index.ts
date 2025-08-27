@@ -10,7 +10,7 @@ declare const globalThis: {
 } & typeof global
 
 // Single source of truth for database connection
-const prisma = globalThis.prismaGlobal ?? new PrismaClient({
+export const prisma = globalThis.prismaGlobal ?? new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
 })
 
@@ -32,11 +32,7 @@ export const connectToDatabase = async (
   }
 
   try {
-    console.log('🔍 Testing database connection...')
-    // Test the connection by running a simple query
-    await prisma.$queryRaw`SELECT 1`
-    console.log('✅ Database connection successful')
-    
+    // Do not open a new connection per call; Prisma lazily manages connections.
     return { prisma, isMock: false }
   } catch (error) {
     console.error('❌ Failed to connect to PostgreSQL:', error)
