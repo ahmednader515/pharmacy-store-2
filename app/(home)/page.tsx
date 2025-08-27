@@ -13,7 +13,7 @@ export default async function HomePage() {
     const { carousels } = data.settings[0];
     
     // Debug: Log what we're trying to fetch
-    console.log('Fetching data for homepage...')
+    console.log('Fetching data for homepage.')
 
     // Single database connection to fetch all data
     const {
