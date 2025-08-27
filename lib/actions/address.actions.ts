@@ -1,7 +1,7 @@
 'use server'
 
 import { auth } from '@/auth'
-import { connectToDatabase } from '@/lib/db'
+import { prisma } from '@/lib/prisma'
 import { formatError } from '@/lib/utils'
 import { ShippingAddress } from '@/types'
 import data from '@/lib/data'
@@ -14,13 +14,7 @@ export async function createAddress(address: ShippingAddress) {
       return { success: false, message: 'يجب تسجيل الدخول أولاً' }
     }
 
-    const connection = await connectToDatabase()
-    
-    // Mock mode removed: always use database
-    
-    if (!connection.prisma) {
-      return { success: false, message: 'فشل الاتصال بقاعدة البيانات' }
-    }
+    // Always use database
     
     // TODO: Implement database storage for addresses
     return { success: true, message: 'تم إضافة العنوان بنجاح', data: address }
@@ -37,13 +31,7 @@ export async function updateAddress(index: number, address: ShippingAddress) {
       return { success: false, message: 'يجب تسجيل الدخول أولاً' }
     }
 
-    const connection = await connectToDatabase()
-    
-    // Mock mode removed: always use database
-    
-    if (!connection.prisma) {
-      return { success: false, message: 'فشل الاتصال بقاعدة البيانات' }
-    }
+    // Always use database
     
     // TODO: Implement database update for addresses
     return { success: true, message: 'تم تحديث العنوان بنجاح', data: address }
@@ -60,13 +48,7 @@ export async function deleteAddress(address: ShippingAddress) {
       return { success: false, message: 'يجب تسجيل الدخول أولاً' }
     }
 
-    const connection = await connectToDatabase()
-    
-    // Mock mode removed: always use database
-    
-    if (!connection.prisma) {
-      return { success: false, message: 'فشل الاتصال بقاعدة البيانات' }
-    }
+    // Always use database
     
     // TODO: Implement database deletion for addresses
     return { success: true, message: 'تم حذف العنوان بنجاح' }
@@ -83,13 +65,7 @@ export async function setDefaultAddress(address: ShippingAddress) {
       return { success: false, message: 'يجب تسجيل الدخول أولاً' }
     }
 
-    const connection = await connectToDatabase()
-    
-    // Mock mode removed: always use database
-    
-    if (!connection.prisma) {
-      return { success: false, message: 'فشل الاتصال بقاعدة البيانات' }
-    }
+    // Always use database
     
     // TODO: Implement database update for default address
     return { success: true, message: 'تم تعيين العنوان كافتراضي بنجاح' }
@@ -106,13 +82,7 @@ export async function getUserAddresses() {
       return { success: false, message: 'يجب تسجيل الدخول أولاً' }
     }
 
-    const connection = await connectToDatabase()
-    
-    // Mock mode removed: always use database
-    
-    if (!connection.prisma) {
-      return { success: false, message: 'فشل الاتصال بقاعدة البيانات' }
-    }
+    // Always use database
     
     // TODO: Implement database retrieval for addresses
     return { success: true, data: [] }

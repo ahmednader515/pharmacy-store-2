@@ -1,6 +1,6 @@
 'use server'
 
-import { prisma } from '@/lib/db'
+import { prisma } from '@/lib/prisma'
 import data from '@/lib/data'
 import { revalidatePath } from 'next/cache'
 import { formatError } from '../utils'

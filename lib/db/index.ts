@@ -1,23 +1,14 @@
-import { PrismaClient } from '@prisma/client'
 import { loadEnvFromFile } from '../env-loader'
+import { prisma } from '@/lib/prisma'
+
+// Backward compatible re-export so legacy imports from '@/lib/db' keep working
+export { prisma } from '@/lib/prisma'
 
 // Load environment variables from .env file first
 loadEnvFromFile()
 
 // Extend globalThis for better TypeScript support
-declare const globalThis: {
-  prismaGlobal: PrismaClient | undefined
-} & typeof global
-
-// Single source of truth for database connection
-export const prisma = globalThis.prismaGlobal ?? new PrismaClient({
-  log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
-})
-
-// In development, store in globalThis to survive hot reloads
-if (process.env.NODE_ENV === 'development') {
-  globalThis.prismaGlobal = prisma
-}
+// Prisma is provided by lib/prisma singleton
 
 export const connectToDatabase = async (
   DATABASE_URL = process.env.DATABASE_URL

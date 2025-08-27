@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
-import { connectToDatabase } from '@/lib/db'
+import { prisma } from '@/lib/prisma'
 import { formatError } from '@/lib/utils'
 
 import { WebPageInputSchema, WebPageUpdateSchema } from '../validator'
@@ -11,16 +11,11 @@ import { z } from 'zod'
 // CREATE
 export async function createWebPage(data: z.infer<typeof WebPageInputSchema>) {
   try {
-    const connection = await connectToDatabase()
     const webPage = WebPageInputSchema.parse(data)
     
     // Mock mode removed: always use database
     
-    if (!connection.prisma) {
-      return { success: false, message: 'Database connection failed' }
-    }
-    
-    await connection.prisma.webPage.create({
+    await prisma.webPage.create({
       data: webPage
     })
     revalidatePath('/admin/web-pages')
@@ -36,18 +31,13 @@ export async function createWebPage(data: z.infer<typeof WebPageInputSchema>) {
 // UPDATE
 export async function updateWebPage(data: z.infer<typeof WebPageUpdateSchema>) {
   try {
-    const connection = await connectToDatabase()
     const webPage = WebPageUpdateSchema.parse(data)
     
     // Mock mode removed: always use database
     
-    if (!connection.prisma) {
-      return { success: false, message: 'Database connection failed' }
-    }
-    
     const { _id, ...updateData } = webPage
     
-    await connection.prisma.webPage.update({
+    await prisma.webPage.update({
       where: { id: _id },
       data: updateData
     })
@@ -63,15 +53,7 @@ export async function updateWebPage(data: z.infer<typeof WebPageUpdateSchema>) {
 // DELETE
 export async function deleteWebPage(id: string) {
   try {
-    const connection = await connectToDatabase()
-    
-    // Mock mode removed: always use database
-    
-    if (!connection.prisma) {
-      return { success: false, message: 'Database connection failed' }
-    }
-    
-    const res = await connection.prisma.webPage.delete({
+    const res = await prisma.webPage.delete({
       where: { id }
     })
     if (!res) throw new Error('WebPage not found')
@@ -87,27 +69,11 @@ export async function deleteWebPage(id: string) {
 
 // GET ALL
 export async function getAllWebPages() {
-  const connection = await connectToDatabase()
-  // Mock mode removed: always use database
-  
-  if (!connection.prisma) {
-    console.warn('Database connection failed in getAllWebPages')
-    return []
-  }
-  
-  const webPages = await connection.prisma.webPage.findMany()
+  const webPages = await prisma.webPage.findMany()
   return JSON.parse(JSON.stringify(webPages))
 }
 export async function getWebPageById(webPageId: string) {
-  const connection = await connectToDatabase()
-  // Mock mode removed: always use database
-  
-  if (!connection.prisma) {
-    console.warn('Database connection failed in getWebPageById')
-    return null
-  }
-  
-  const webPage = await connection.prisma.webPage.findUnique({
+  const webPage = await prisma.webPage.findUnique({
     where: { id: webPageId }
   })
   return JSON.parse(JSON.stringify(webPage))
@@ -115,14 +81,8 @@ export async function getWebPageById(webPageId: string) {
 
 // GET ONE PAGE BY SLUG
 export async function getWebPageBySlug(slug: string) {
-  const connection = await connectToDatabase()
-  // Mock mode removed: always use database
-  if (!connection.prisma) {
-    return null
-  }
-  
   try {
-    const webPage = await connection.prisma.webPage.findFirst({
+    const webPage = await prisma.webPage.findFirst({
       where: { slug, isPublished: true }
     })
     if (!webPage) return null

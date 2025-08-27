@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-import { connectToDatabase } from '@/lib/db'
+import { prisma } from '@/lib/prisma'
 import data from '@/lib/data'
 
 export const GET = async (request: NextRequest) => {
@@ -21,13 +21,7 @@ export const GET = async (request: NextRequest) => {
         }
       : { category: { in: categories }, id: { notIn: productIds } }
 
-  const connection = await connectToDatabase()
-  
-  if (!connection.prisma) {
-    return NextResponse.json({ error: 'Database connection failed' }, { status: 500 })
-  }
-  
-  const products = await connection.prisma.product.findMany({
+  const products = await prisma.product.findMany({
     where: filter
   })
   
