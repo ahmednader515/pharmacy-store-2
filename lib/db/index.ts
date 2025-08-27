@@ -1,5 +1,5 @@
 import { loadEnvFromFile } from '../env-loader'
-import { prisma } from '@/lib/prisma'
+import { prisma, prismaDirect } from '@/lib/prisma'
 
 // Backward compatible re-export so legacy imports from '@/lib/db' keep working
 export { prisma } from '@/lib/prisma'
@@ -59,3 +59,4 @@ export const closeGlobalPrisma = async () => {
 
 // Export initialization functions
 export { initializeDatabase } from './init'
+export { prisma, prismaDirect } from '@/lib/prisma'
