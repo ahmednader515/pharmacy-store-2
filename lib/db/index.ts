@@ -1,8 +1,7 @@
 import { loadEnvFromFile } from '../env-loader'
-import { prisma, prismaDirect } from '@/lib/prisma'
+import { prisma } from '@/lib/prisma'
 
-// Backward compatible re-export so legacy imports from '@/lib/db' keep working
-export { prisma } from '@/lib/prisma'
+// Backward compatible re-exports are at the bottom
 
 // Load environment variables from .env file first
 loadEnvFromFile()
