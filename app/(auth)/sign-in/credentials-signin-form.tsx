@@ -214,13 +214,13 @@ export default function CredentialsSignInForm() {
           </div>
         )}
         
-        <div className='space-y-10'>
+        <div className='space-y-6 md:space-y-8 lg:space-y-10'>
           <FormField
             control={control}
             name='phone'
             render={({ field, fieldState }) => (
               <FormItem className='w-full'>
-                <FormLabel className="text-right block font-cairo text-gray-700 text-xl mb-4">رقم الهاتف</FormLabel>
+                <FormLabel className="text-right block font-cairo text-gray-700 text-base md:text-lg lg:text-xl mb-2 md:mb-3 lg:mb-4">رقم الهاتف</FormLabel>
                 <FormControl>
                   <PhoneInput 
                     placeholder='أدخل رقم الهاتف' 
@@ -228,7 +228,7 @@ export default function CredentialsSignInForm() {
                     onChange={field.onChange}
                     onBlur={field.onBlur}
                     name={field.name}
-                    className={`text-right font-cairo h-14 text-lg px-6 ${
+                    className={`text-right font-cairo h-12 md:h-14 text-base md:text-lg px-4 md:px-6 ${
                       fieldState.error ? 'border-red-500 focus:border-red-500' : ''
                     }`}
                   />
@@ -239,7 +239,7 @@ export default function CredentialsSignInForm() {
                     {fieldState.error.message}
                   </p>
                 )}
-                <p className="text-sm text-gray-500 mt-1 text-right font-cairo">
+                <p className="text-xs md:text-sm text-gray-500 mt-1 text-right font-cairo">
                   مثال: +201234567890
                 </p>
               </FormItem>
@@ -251,13 +251,13 @@ export default function CredentialsSignInForm() {
             name='password'
             render={({ field, fieldState }) => (
               <FormItem className='w-full'>
-                <FormLabel className="text-right block font-cairo text-gray-700 text-xl mb-4">كلمة المرور</FormLabel>
+                <FormLabel className="text-right block font-cairo text-gray-700 text-base md:text-lg lg:text-xl mb-2 md:mb-3 lg:mb-4">كلمة المرور</FormLabel>
                 <FormControl>
                   <Input
                     type='password'
                     placeholder='أدخل كلمة المرور'
                     {...field}
-                    className={`text-right font-cairo h-14 text-lg px-6 ${
+                    className={`text-right font-cairo h-12 md:h-14 text-base md:text-lg px-4 md:px-6 ${
                       fieldState.error ? 'border-red-500 focus:border-red-500' : ''
                     }`}
                   />
@@ -272,15 +272,15 @@ export default function CredentialsSignInForm() {
             )}
           />
 
-          <div className="pt-6">
+          <div className="pt-4 md:pt-6">
             <Button 
               type='submit' 
               disabled={isSubmitting} 
-              className="w-full font-cairo h-14 text-lg relative"
+              className="w-full font-cairo h-12 md:h-14 text-base md:text-lg relative"
             >
               {isSubmitting ? (
                 <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 md:h-5 md:w-5 border-b-2 border-white mr-2"></div>
                   جاري تسجيل الدخول...
                 </>
               ) : (
@@ -290,14 +290,14 @@ export default function CredentialsSignInForm() {
             
             {process.env.NODE_ENV === 'development' && (
               <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-800 text-center font-cairo">
+                <p className="text-xs md:text-sm text-blue-800 text-center font-cairo">
                   💡 <strong>بيانات تجريبية:</strong> يمكنك استخدام رقم الهاتف +201234567890 وكلمة المرور 123456
                 </p>
               </div>
             )}
           </div>
           
-          <div className='text-lg text-right text-gray-600 font-cairo leading-relaxed'>
+          <div className='text-sm md:text-base lg:text-lg text-right text-gray-600 font-cairo leading-relaxed'>
             عند تسجيل الدخول، فإنك توافق على{' '}
             <Link href='/page/conditions-of-use' className="text-blue-600 hover:underline">شروط الاستخدام</Link> و{' '}
             <Link href='/page/privacy-policy' className="text-blue-600 hover:underline">سياسة الخصوصية</Link> الخاصة بـ {site.name}.

@@ -128,18 +128,18 @@ export default function SignUpForm() {
     <Form {...form}>
       <form onSubmit={handleSubmit(onSubmit)} dir="rtl" className="font-cairo">
         <input type='hidden' name='callbackUrl' value={callbackUrl} />
-        <div className='space-y-8'>
+        <div className='space-y-6 md:space-y-8'>
           <FormField
             control={control}
             name='name'
             render={({ field }) => (
               <FormItem className='w-full'>
-                <FormLabel className="text-right block font-cairo text-gray-700 text-lg mb-3">الاسم</FormLabel>
+                <FormLabel className="text-right block font-cairo text-gray-700 text-base md:text-lg mb-2 md:mb-3">الاسم</FormLabel>
                 <FormControl>
                   <Input 
                     placeholder='أدخل اسمك' 
                     {...field} 
-                    className="text-right font-cairo h-12 text-lg px-4"
+                    className="text-right font-cairo h-10 md:h-12 text-base md:text-lg px-3 md:px-4"
                   />
                 </FormControl>
                 <FormMessage />
@@ -152,7 +152,7 @@ export default function SignUpForm() {
             name='phone'
             render={({ field }) => (
               <FormItem className='w-full'>
-                <FormLabel className="text-right block font-cairo text-gray-700 text-lg mb-3">رقم الهاتف</FormLabel>
+                <FormLabel className="text-right block font-cairo text-gray-700 text-base md:text-lg mb-2 md:mb-3">رقم الهاتف</FormLabel>
                 <FormControl>
                   <PhoneInput 
                     placeholder='أدخل رقم الهاتف' 
@@ -160,7 +160,7 @@ export default function SignUpForm() {
                     onChange={field.onChange}
                     onBlur={field.onBlur}
                     name={field.name}
-                    className="text-right font-cairo h-12 text-lg px-4"
+                    className="text-right font-cairo h-10 md:h-12 text-base md:text-lg px-3 md:px-4"
                   />
                 </FormControl>
                 <FormMessage />
@@ -173,13 +173,13 @@ export default function SignUpForm() {
             name='password'
             render={({ field }) => (
               <FormItem className='w-full'>
-                <FormLabel className="text-right block font-cairo text-gray-700 text-lg mb-3">كلمة المرور</FormLabel>
+                <FormLabel className="text-right block font-cairo text-gray-700 text-base md:text-lg mb-2 md:mb-3">كلمة المرور</FormLabel>
                 <FormControl>
                   <Input
                     type='password'
                     placeholder='أدخل كلمة المرور'
                     {...field}
-                    className="text-right font-cairo h-12 text-lg px-4"
+                    className="text-right font-cairo h-10 md:h-12 text-base md:text-lg px-3 md:px-4"
                   />
                 </FormControl>
                 <FormMessage />
@@ -192,13 +192,13 @@ export default function SignUpForm() {
             name='confirmPassword'
             render={({ field }) => (
               <FormItem className='w-full'>
-                <FormLabel className="text-right block font-cairo text-gray-700 text-lg mb-3">تأكيد كلمة المرور</FormLabel>
+                <FormLabel className="text-right block font-cairo text-gray-700 text-base md:text-lg mb-2 md:mb-3">تأكيد كلمة المرور</FormLabel>
                 <FormControl>
                   <Input
                     type='password'
                     placeholder='أعد إدخال كلمة المرور'
                     {...field}
-                    className="text-right font-cairo h-12 text-lg px-4"
+                    className="text-right font-cairo h-10 md:h-12 text-base md:text-lg px-3 md:px-4"
                   />
                 </FormControl>
                 <FormMessage />
@@ -206,13 +206,13 @@ export default function SignUpForm() {
             )}
           />
           
-          <div className="pt-4">
-            <Button type='submit' disabled={isSubmitting} className="w-full font-cairo h-12 text-lg">
+          <div className="pt-3 md:pt-4">
+            <Button type='submit' disabled={isSubmitting} className="w-full font-cairo h-10 md:h-12 text-base md:text-lg">
               {isSubmitting ? 'جاري إنشاء الحساب...' : 'إنشاء حساب'}
             </Button>
           </div>
           
-          <div className='text-base text-right text-gray-600 font-cairo leading-relaxed'>
+          <div className='text-sm md:text-base text-right text-gray-600 font-cairo leading-relaxed'>
             عند إنشاء الحساب، فإنك توافق على{' '}
             <Link href='/page/conditions-of-use' className="text-blue-600 hover:underline">شروط الاستخدام</Link> و{' '}
             <Link href='/page/privacy-policy' className="text-blue-600 hover:underline">سياسة الخصوصية</Link> الخاصة بـ {site.name}.

@@ -21,7 +21,7 @@ export default function ServerPagination({
   if (totalPages <= 1) return null
 
   const getVisiblePages = () => {
-    const delta = 2
+    const delta = window.innerWidth < 768 ? 1 : 2 // Show fewer pages on mobile
     const range = []
     const rangeWithDots = []
 
@@ -57,15 +57,17 @@ export default function ServerPagination({
   }
 
   return (
-    <div className={`flex items-center justify-center gap-2 ${className}`} dir="rtl">
+    <div className={`flex items-center justify-center gap-1 sm:gap-2 ${className}`} dir="rtl">
+      {/* First page button - hidden on mobile */}
       <Button
         variant='outline'
         size='sm'
         asChild
         disabled={currentPage === 1}
+        className='hidden sm:flex'
       >
         <Link href={createPageUrl(1)}>
-          <ChevronsRight className='h-4 w-4' />
+          <ChevronsRight className='h-3 w-3 sm:h-4 sm:w-4' />
           <span className='sr-only'>First page</span>
         </Link>
       </Button>
@@ -75,9 +77,10 @@ export default function ServerPagination({
         size='sm'
         asChild
         disabled={currentPage === 1}
+        className='h-8 w-8 sm:h-9 sm:w-9 p-0'
       >
         <Link href={createPageUrl(currentPage - 1)}>
-          <ChevronRight className='h-4 w-4' />
+          <ChevronRight className='h-3 w-3 sm:h-4 sm:w-4' />
           <span className='sr-only'>Previous page</span>
         </Link>
       </Button>
@@ -85,12 +88,13 @@ export default function ServerPagination({
       {getVisiblePages().map((page, index) => (
         <React.Fragment key={index}>
           {page === '...' ? (
-            <span className='px-3 py-2 text-sm text-muted-foreground'>...</span>
+            <span className='px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-muted-foreground'>...</span>
           ) : (
             <Button
               variant={currentPage === page ? 'default' : 'outline'}
               size='sm'
               asChild
+              className='h-8 w-8 sm:h-9 sm:w-9 p-0 text-xs sm:text-sm'
             >
               <Link href={createPageUrl(page as number)}>
                 {page}
@@ -105,21 +109,24 @@ export default function ServerPagination({
         size='sm'
         asChild
         disabled={currentPage === totalPages}
+        className='h-8 w-8 sm:h-9 sm:w-9 p-0'
       >
         <Link href={createPageUrl(currentPage + 1)}>
-          <ChevronLeft className='h-4 w-4' />
+          <ChevronLeft className='h-3 w-3 sm:h-4 sm:w-4' />
           <span className='sr-only'>Next page</span>
         </Link>
       </Button>
 
+      {/* Last page button - hidden on mobile */}
       <Button
         variant='outline'
         size='sm'
         asChild
         disabled={currentPage === totalPages}
+        className='hidden sm:flex'
       >
         <Link href={createPageUrl(totalPages)}>
-          <ChevronsLeft className='h-4 w-4' />
+          <ChevronsLeft className='h-3 w-3 sm:h-4 sm:w-4' />
           <span className='sr-only'>Last page</span>
         </Link>
       </Button>

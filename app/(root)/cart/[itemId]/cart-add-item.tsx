@@ -7,6 +7,8 @@ import useCartStore from '@/hooks/use-cart-store'
 import { toast } from '@/hooks/use-toast'
 import { IProduct } from '@/types'
 import { formatPrice } from '@/lib/utils'
+import { useLoading } from '@/hooks/use-loading'
+import { LoadingSpinner } from '@/components/shared/loading-overlay'
 
 interface CartAddItemProps {
   product: IProduct
@@ -21,48 +23,34 @@ export default function CartAddItem({
   onQuantityChange,
   onRemove,
 }: CartAddItemProps) {
-  const [isUpdating, setIsUpdating] = useState(false)
+  const { isLoading: isUpdating, withLoading } = useLoading()
 
   const handleQuantityChange = async (newQuantity: number) => {
     if (newQuantity < 1 || newQuantity > product.countInStock) return
     
-    setIsUpdating(true)
-    try {
-      onQuantityChange(newQuantity)
-      toast({
-        title: 'Cart Updated',
-        description: 'Item quantity has been updated',
-        variant: 'default',
-      })
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to update cart. Please try again.',
-        variant: 'destructive',
-      })
-    } finally {
-      setIsUpdating(false)
-    }
+    await withLoading(
+      async () => {
+        onQuantityChange(newQuantity)
+        toast({
+          title: 'تم تحديث السلة',
+          description: 'تم تحديث كمية المنتج',
+          variant: 'default',
+        })
+      }
+    )
   }
 
   const handleRemove = async () => {
-    setIsUpdating(true)
-    try {
-      onRemove()
-      toast({
-        title: 'Item Removed',
-        description: 'Item has been removed from your cart',
-        variant: 'default',
-      })
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to remove item. Please try again.',
-        variant: 'destructive',
-      })
-    } finally {
-      setIsUpdating(false)
-    }
+    await withLoading(
+      async () => {
+        onRemove()
+        toast({
+          title: 'تم حذف المنتج',
+          description: 'تم حذف المنتج من عربة التسوق',
+          variant: 'default',
+        })
+      }
+    )
   }
 
   return (
@@ -70,7 +58,7 @@ export default function CartAddItem({
       <div className='flex-1'>
         <h3 className='font-medium'>{product.name}</h3>
         <p className='text-sm text-muted-foreground mb-2'>
-          ${formatPrice(product.price || 0)} each
+          ${formatPrice(product.price || 0)} لكل قطعة
         </p>
       </div>
 
@@ -112,7 +100,7 @@ export default function CartAddItem({
       <div className='text-right'>
         <p className='font-medium'>${formatPrice(Number(product.price || 0) * quantity)}</p>
         <p className='text-sm text-muted-foreground'>
-          {product.countInStock} in stock
+          {product.countInStock} في المخزن
         </p>
       </div>
 
@@ -123,7 +111,11 @@ export default function CartAddItem({
         disabled={isUpdating}
         className='h-8 w-8 text-destructive hover:text-destructive'
       >
-        <Trash2 className='h-4 w-4' />
+        {isUpdating ? (
+          <LoadingSpinner size="sm" />
+        ) : (
+          <Trash2 className='h-4 w-4' />
+        )}
       </Button>
     </div>
   )

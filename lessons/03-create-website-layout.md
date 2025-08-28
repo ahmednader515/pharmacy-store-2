@@ -62,7 +62,6 @@
 7. components/shared/header/search.tsx
 
    ```tsx
-   import { SearchIcon } from 'lucide-react'
    import { Input } from '@/components/ui/input'
 
    import {
@@ -104,7 +103,7 @@
            type='submit'
            className='bg-primary text-primary-foreground text-black rounded-s-none rounded-e-md h-full px-3 py-2 '
          >
-           <SearchIcon className='w-6 h-6' />
+          
          </button>
        </form>
      )

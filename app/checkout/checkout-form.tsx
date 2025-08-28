@@ -15,6 +15,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 
 import { useToast } from '@/hooks/use-toast'
 import { createOrder } from '@/lib/actions/order.actions'
+import { useLoading } from '@/hooks/use-loading'
+import LoadingOverlay from '@/components/shared/loading-overlay'
 
 import { ShippingAddressSchema } from '@/lib/validator'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -44,6 +46,7 @@ export default function CheckoutForm() {
   const { site, availablePaymentMethods, defaultPaymentMethod } = data.settings[0];
   const { toast } = useToast()
   const router = useRouter()
+  const { isLoading: isPlacingOrder, withLoading } = useLoading()
 
   const {
     cart: {
@@ -78,26 +81,30 @@ export default function CheckoutForm() {
     useState<boolean>(false)
 
   const handlePlaceOrder = async () => {
-    // Ensure all items have valid clientIds before placing order
-    regenerateClientIds()
-    
-    // Get the current cart state
-    const currentCart = useCartStore.getState().cart
-    
-    const res = await createOrder(currentCart)
-    if (!res.success) {
-      toast({
-        description: res.message,
-        variant: 'destructive',
-      })
-    } else {
-      toast({
-        description: res.message,
-        variant: 'default',
-      })
-      clearCart()
-      router.push(`/checkout/${res.data?.orderId}`)
-    }
+    await withLoading(
+      async () => {
+        // Ensure all items have valid clientIds before placing order
+        regenerateClientIds()
+        
+        // Get the current cart state
+        const currentCart = useCartStore.getState().cart
+        
+        const res = await createOrder(currentCart)
+        if (!res.success) {
+          toast({
+            description: res.message,
+            variant: 'destructive',
+          })
+        } else {
+          toast({
+            description: res.message,
+            variant: 'default',
+          })
+          clearCart()
+          router.push(`/checkout/${res.data?.orderId}`)
+        }
+      }
+    )
   }
   const handleSelectPaymentMethod = () => {
     setIsAddressSelected(true)
@@ -108,30 +115,30 @@ export default function CheckoutForm() {
   }
   const CheckoutSummary = () => (
     <Card>
-      <CardContent className='p-4'>
+      <CardContent className='p-3 sm:p-4'>
         {!isAddressSelected && (
-          <div className='border-b mb-4'>
+          <div className='border-b mb-3 sm:mb-4'>
             <Button
-              className='rounded-full w-full'
+              className='rounded-full w-full btn-mobile'
               onClick={handleSelectShippingAddress}
             >
               التوصيل إلى هذا العنوان
             </Button>
-            <p className='text-xs text-center py-2'>
+            <p className='text-xs text-center py-2 px-2'>
               اختر عنوان التوصيل وطريقة الدفع لحساب رسوم التوصيل والمعالجة والضريبة.
             </p>
           </div>
         )}
         {isAddressSelected && !isPaymentMethodSelected && (
-          <div className=' mb-4'>
+          <div className=' mb-3 sm:mb-4'>
             <Button
-              className='rounded-full w-full'
+              className='rounded-full w-full btn-mobile'
               onClick={handleSelectPaymentMethod}
             >
               استخدم طريقة الدفع هذه
             </Button>
 
-            <p className='text-xs text-center py-2'>
+            <p className='text-xs text-center py-2 px-2'>
               اختر طريقة الدفع للمتابعة. ستتمكن من مراجعة وتعديل طلبك قبل أن يصبح نهائياً.
             </p>
             
@@ -140,22 +147,26 @@ export default function CheckoutForm() {
         )}
         {isPaymentMethodSelected && isAddressSelected && (
           <div>
-            <Button onClick={handlePlaceOrder} className='rounded-full w-full'>
-              تأكيد الطلب
+            <Button 
+              onClick={handlePlaceOrder} 
+              className='rounded-full w-full btn-mobile-lg'
+              disabled={isPlacingOrder}
+            >
+              {isPlacingOrder ? 'جاري تأكيد الطلب...' : 'تأكيد الطلب'}
             </Button>
           </div>
         )}
 
         <div>
-          <div className='text-lg font-bold'>ملخص الطلب</div>
+          <div className='text-base sm:text-lg font-bold'>ملخص الطلب</div>
           <div className='space-y-2'>
-            <div className='flex justify-between'>
+            <div className='flex justify-between text-sm sm:text-base'>
               <span>المنتجات:</span>
               <span>
                 <ProductPrice price={itemsPrice} plain />
               </span>
             </div>
-            <div className='flex justify-between'>
+            <div className='flex justify-between text-sm sm:text-base'>
               <span>التوصيل والمعالجة:</span>
               <span>
                 {shippingPrice === undefined ? (
@@ -167,7 +178,7 @@ export default function CheckoutForm() {
                 )}
               </span>
             </div>
-            <div className='flex justify-between'>
+            <div className='flex justify-between text-sm sm:text-base'>
               <span>الضريبة:</span>
               <span>
                 {taxPrice === undefined ? (
@@ -177,7 +188,7 @@ export default function CheckoutForm() {
                 )}
               </span>
             </div>
-            <div className='flex justify-between  pt-4 font-bold text-lg'>
+            <div className='flex justify-between pt-3 sm:pt-4 font-bold text-base sm:text-lg'>
               <span>المجموع الكلي:</span>
               <span>
                 <ProductPrice price={totalPrice} plain />
@@ -190,18 +201,22 @@ export default function CheckoutForm() {
   )
 
   return (
-    <main className='max-w-6xl mx-auto highlight-link' dir='rtl'>
-      <div className='grid md:grid-cols-4 gap-6'>
-        <div className='md:col-span-3'>
+    <main className='max-w-6xl mx-auto highlight-link px-4 py-6 sm:py-8' dir='rtl'>
+      <LoadingOverlay 
+        isLoading={isPlacingOrder} 
+        text="جاري معالجة الطلب..."
+      />
+      <div className='grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6'>
+        <div className='lg:col-span-3'>
           {/* shipping address */}
           <div>
             {isAddressSelected && shippingAddress ? (
-              <div className='grid grid-cols-1 md:grid-cols-12    my-3  pb-3'>
-                <div className='col-span-5 flex text-lg font-bold '>
-                  <span className='w-8'>1 </span>
+              <div className='grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 my-3 pb-3'>
+                <div className='col-span-12 lg:col-span-5 flex text-base sm:text-lg font-bold'>
+                  <span className='w-6 sm:w-8'>1 </span>
                   <span>عنوان التوصيل</span>
                 </div>
-                <div className='col-span-5 '>
+                <div className='col-span-12 lg:col-span-5 text-sm sm:text-base'>
                   <p>
                     {shippingAddress.street} <br />
                     {shippingAddress.building && `${shippingAddress.building}, `}
@@ -211,13 +226,14 @@ export default function CheckoutForm() {
                     {shippingAddress.landmark && <><br />{shippingAddress.landmark}</>}
                   </p>
                 </div>
-                <div className='col-span-2'>
+                <div className='col-span-12 lg:col-span-2'>
                   <Button
                     variant={'outline'}
                     onClick={() => {
                       setIsAddressSelected(false)
                       setIsPaymentMethodSelected(true)
                     }}
+                    className='w-full lg:w-auto btn-mobile'
                   >
                     تغيير
                   </Button>
@@ -225,8 +241,8 @@ export default function CheckoutForm() {
               </div>
             ) : (
               <>
-                <div className='flex text-primary text-lg font-bold my-2'>
-                  <span className='w-8'>1 </span>
+                <div className='flex text-primary text-base sm:text-lg font-bold my-2'>
+                  <span className='w-6 sm:w-8'>1 </span>
                   <span>أدخل عنوان التوصيل</span>
                 </div>
                 <Form {...shippingAddressForm}>
@@ -235,11 +251,11 @@ export default function CheckoutForm() {
                     onSubmit={shippingAddressForm.handleSubmit(
                       onSubmitShippingAddress
                     )}
-                    className='space-y-4'
+                    className='space-y-3 sm:space-y-4'
                   >
-                    <Card className='md:mr-8 my-4'>
-                      <CardContent className='p-4 space-y-2'>
-                        <div className='text-lg font-bold mb-2'>
+                    <Card className='lg:mr-8 my-3 sm:my-4'>
+                      <CardContent className='p-3 sm:p-4 space-y-2 sm:space-y-3'>
+                        <div className='text-base sm:text-lg font-bold mb-2'>
                           عنوانك
                         </div>
 
@@ -249,11 +265,12 @@ export default function CheckoutForm() {
                             name='street'
                             render={({ field }) => (
                               <FormItem className='w-full'>
-                                <FormLabel>العنوان (الشارع، الشقة، الجناح، الوحدة، إلخ)</FormLabel>
+                                <FormLabel className='text-sm sm:text-base'>العنوان (الشارع، الشقة، الجناح، الوحدة، إلخ)</FormLabel>
                                 <FormControl>
                                   <Input
                                     placeholder='أدخل العنوان'
                                     {...field}
+                                    className='input-mobile'
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -262,17 +279,17 @@ export default function CheckoutForm() {
                           />
                         </div>
 
-                        <div className='flex flex-col gap-5 md:flex-row'>
+                        <div className='flex flex-col gap-3 sm:gap-5 lg:flex-row'>
                           <FormField
                             control={shippingAddressForm.control}
                             name='province'
                             render={({ field }) => (
                               <FormItem className='w-full'>
-                                <FormLabel>المحافظة</FormLabel>
+                                <FormLabel className='text-sm sm:text-base'>المحافظة</FormLabel>
                                 <FormControl>
                                   <select
                                     {...field}
-                                    className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary'
+                                    className='input-mobile'
                                   >
                                     <option value=''>اختر المحافظة</option>
                                     <option value='القاهرة'>القاهرة</option>
@@ -313,11 +330,11 @@ export default function CheckoutForm() {
                             name='area'
                             render={({ field }) => (
                               <FormItem className='w-full'>
-                                <FormLabel>المنطقة</FormLabel>
+                                <FormLabel className='text-sm sm:text-base'>المنطقة</FormLabel>
                                 <FormControl>
                                   <select
                                     {...field}
-                                    className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary'
+                                    className='input-mobile'
                                   >
                                     <option value=''>اختر المنطقة</option>
                                     <option value='القاهرة الجديدة'>القاهرة الجديدة</option>
@@ -341,17 +358,18 @@ export default function CheckoutForm() {
                           />
                         </div>
 
-                        <div className='flex flex-col gap-5 md:flex-row'>
+                        <div className='flex flex-col gap-3 sm:gap-5 lg:flex-row'>
                           <FormField
                             control={shippingAddressForm.control}
                             name='apartment'
                             render={({ field }) => (
                               <FormItem className='w-full'>
-                                <FormLabel>شقة</FormLabel>
+                                <FormLabel className='text-sm sm:text-base'>شقة</FormLabel>
                                 <FormControl>
                                   <Input
                                     placeholder='أدخل رقم الشقة'
                                     {...field}
+                                    className='input-mobile'
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -363,9 +381,9 @@ export default function CheckoutForm() {
                             name='building'
                             render={({ field }) => (
                               <FormItem className='w-full'>
-                                <FormLabel>المبني</FormLabel>
+                                <FormLabel className='text-sm sm:text-base'>المبني</FormLabel>
                                 <FormControl>
-                                  <Input placeholder='أدخل اسم المبني' {...field} />
+                                  <Input placeholder='أدخل اسم المبني' {...field} className='input-mobile' />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -376,11 +394,12 @@ export default function CheckoutForm() {
                             name='floor'
                             render={({ field }) => (
                               <FormItem className='w-full'>
-                                <FormLabel>طابق</FormLabel>
+                                <FormLabel className='text-sm sm:text-base'>طابق</FormLabel>
                                 <FormControl>
                                   <Input
                                     placeholder='أدخل الطابق'
                                     {...field}
+                                    className='input-mobile'
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -395,11 +414,12 @@ export default function CheckoutForm() {
                             name='landmark'
                             render={({ field }) => (
                               <FormItem className='w-full'>
-                                <FormLabel>علامة</FormLabel>
+                                <FormLabel className='text-sm sm:text-base'>علامة</FormLabel>
                                 <FormControl>
                                   <Input
                                     placeholder='أدخل علامة مميزة'
                                     {...field}
+                                    className='input-mobile'
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -408,10 +428,10 @@ export default function CheckoutForm() {
                           />
                         </div>
                       </CardContent>
-                      <CardFooter className='  p-4'>
+                      <CardFooter className='p-3 sm:p-4'>
                         <Button
                           type='submit'
-                          className='rounded-full font-bold'
+                          className='rounded-full font-bold w-full btn-mobile-lg'
                         >
                           توصيل الي هذا العنوان
                         </Button>
@@ -425,20 +445,21 @@ export default function CheckoutForm() {
           {/* payment method */}
           <div className='border-y'>
             {isPaymentMethodSelected && paymentMethod ? (
-              <div className='grid  grid-cols-1 md:grid-cols-12  my-3 pb-3'>
-                <div className='flex text-lg font-bold  col-span-5'>
-                  <span className='w-8'>2 </span>
+              <div className='grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 my-3 pb-3'>
+                <div className='flex text-base sm:text-lg font-bold col-span-12 lg:col-span-5'>
+                  <span className='w-6 sm:w-8'>2 </span>
                   <span>طريقة الدفع</span>
                 </div>
-                <div className='col-span-5 '>
+                <div className='col-span-12 lg:col-span-5 text-sm sm:text-base'>
                   <p>{paymentMethod}</p>
                 </div>
-                <div className='col-span-2'>
+                <div className='col-span-12 lg:col-span-2'>
                   <Button
                     variant='outline'
                     onClick={() => {
                       setIsPaymentMethodSelected(false)
                     }}
+                    className='w-full lg:w-auto btn-mobile'
                   >
                     تغيير
                   </Button>
@@ -446,24 +467,24 @@ export default function CheckoutForm() {
               </div>
             ) : isAddressSelected ? (
               <>
-                <div className='flex text-primary text-lg font-bold my-2'>
-                  <span className='w-8'>2 </span>
+                <div className='flex text-primary text-base sm:text-lg font-bold my-2'>
+                  <span className='w-6 sm:w-8'>2 </span>
                   <span>اختر طريقة الدفع</span>
                 </div>
-                <Card className='md:mr-8 my-4'>
-                  <CardContent className='p-4'>
+                <Card className='lg:mr-8 my-3 sm:my-4'>
+                  <CardContent className='p-3 sm:p-4'>
                     <RadioGroup
                       value={paymentMethod}
                       onValueChange={(value) => setPaymentMethod(value)}
                     >
                       {availablePaymentMethods.map((pm) => (
-                        <div key={pm.name} className='flex items-center py-1 '>
+                        <div key={pm.name} className='flex items-center py-1'>
                           <RadioGroupItem
                             value={pm.name}
                             id={`payment-${pm.name}`}
                           />
                           <Label
-                            className='font-bold pr-2 cursor-pointer text-right w-full'
+                            className='font-bold pr-2 cursor-pointer text-right w-full text-sm sm:text-base'
                             htmlFor={`payment-${pm.name}`}
                           >
                             {pm.name}
@@ -472,10 +493,10 @@ export default function CheckoutForm() {
                       ))}
                     </RadioGroup>
                   </CardContent>
-                  <CardFooter className='p-4'>
+                  <CardFooter className='p-3 sm:p-4'>
                     <Button
                       onClick={handleSelectPaymentMethod}
-                      className='rounded-full font-bold'
+                      className='rounded-full font-bold w-full btn-mobile-lg'
                     >
                       استخدم طريقة الدفع هذه
                     </Button>
@@ -483,8 +504,8 @@ export default function CheckoutForm() {
                 </Card>
               </>
             ) : (
-              <div className='flex text-muted-foreground text-lg font-bold my-4 py-3'>
-                <span className='w-8'>2 </span>
+              <div className='flex text-muted-foreground text-base sm:text-lg font-bold my-3 sm:my-4 py-3'>
+                <span className='w-6 sm:w-8'>2 </span>
                 <span>اختر طريقة الدفع</span>
               </div>
             )}
@@ -494,18 +515,22 @@ export default function CheckoutForm() {
               
             
           {isPaymentMethodSelected && isAddressSelected && (
-            <div className='mt-6'>
-              <div className='block md:hidden'>
+            <div className='mt-4 sm:mt-6'>
+              <div className='block lg:hidden'>
                 <CheckoutSummary />
               </div>
 
-              <Card className='hidden md:block '>
-                <CardContent className='p-4 flex flex-col md:flex-row justify-between items-center gap-3'>
-                  <Button onClick={handlePlaceOrder} className='rounded-full'>
-                    تأكيد الطلب
+              <Card className='hidden lg:block'>
+                <CardContent className='p-4 flex flex-col lg:flex-row justify-between items-center gap-3'>
+                  <Button 
+                    onClick={handlePlaceOrder} 
+                    className='rounded-full btn-mobile-lg'
+                    disabled={isPlacingOrder}
+                  >
+                    {isPlacingOrder ? 'جاري تأكيد الطلب...' : 'تأكيد الطلب'}
                   </Button>
                   <div className='flex-1'>
-                    <p className='font-bold text-lg'>
+                    <p className='font-bold text-base sm:text-lg'>
                       المجموع الكلي: <ProductPrice price={totalPrice} plain />
                     </p>
                   </div>
@@ -515,7 +540,7 @@ export default function CheckoutForm() {
           )}
           <CheckoutFooter />
         </div>
-        <div className='hidden md:block'>
+        <div className='hidden lg:block'>
           <CheckoutSummary />
         </div>
       </div>

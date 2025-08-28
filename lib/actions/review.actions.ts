@@ -7,7 +7,7 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { formatError } from '../utils'
 import { ReviewInputSchema } from '../validator'
-import { IReviewDetails } from '@/types'
+//
 
 export async function createUpdateReview({
   data,
@@ -54,7 +54,7 @@ export async function createUpdateReview({
           productId: review.product,
           isVerifiedPurchase: review.isVerifiedPurchase,
           rating: review.rating,
-          title: review.title,
+          title: review.title || '',
           comment: review.comment,
         }
       })
@@ -62,11 +62,22 @@ export async function createUpdateReview({
 
     // Update product review statistics
     await updateProductReviewStats(review.product)
-    
-    revalidatePath(path)
+
+    // Revalidate the correct product page by slug
+    try {
+      const product = await prisma.product.findUnique({
+        where: { id: review.product },
+        select: { slug: true },
+      })
+      if (product?.slug) {
+        revalidatePath(`/product/${product.slug}`)
+      }
+    } catch (e) {
+      // noop
+    }
     return {
       success: true,
-      message: existingReview ? 'Review updated successfully' : 'Review created successfully',
+      message: existingReview ? 'تم تحديث التقييم بنجاح' : 'تم إنشاء التقييم بنجاح',
     }
   } catch (error) {
     console.error('Review creation error:', error)
@@ -161,17 +172,17 @@ export async function getReviews({
     const totalPages = Math.ceil(totalReviews / limit)
 
     // Transform reviews to match expected format
-    const transformedReviews: IReviewDetails[] = reviews.map(review => ({
+    const transformedReviews = reviews.map(review => ({
       id: review.id,
       product: review.productId,
-      user: review.user.id,
       rating: review.rating,
       title: review.title,
       comment: review.comment,
       isVerifiedPurchase: review.isVerifiedPurchase,
       createdAt: review.createdAt.toISOString(),
       user: {
-        name: review.user.name
+        name: review.user.name,
+        id: review.userId,
       }
     }))
 
@@ -239,11 +250,22 @@ export const deleteReview = async (reviewId: string, path: string) => {
 
     // Update product review stats
     await updateProductReviewStats(review.productId)
-    
-    revalidatePath(path)
+
+    // Revalidate the correct product page by slug
+    try {
+      const product = await prisma.product.findUnique({
+        where: { id: review.productId },
+        select: { slug: true },
+      })
+      if (product?.slug) {
+        revalidatePath(`/product/${product.slug}`)
+      }
+    } catch (e) {
+      // noop
+    }
     return {
       success: true,
-      message: 'Review deleted successfully',
+      message: 'تم حذف التقييم بنجاح',
     }
   } catch (error) {
     return {

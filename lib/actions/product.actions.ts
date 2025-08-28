@@ -66,7 +66,7 @@ export async function createProduct(data: IProductInput) {
         brand: productData.brand,
         description: productData.description,
         price: product.price,
-        listPrice: product.listPrice,
+        listPrice: productData.listPrice,
         countInStock: productData.countInStock,
         tags: productData.tags,
         colors: productData.colors,
@@ -81,7 +81,7 @@ export async function createProduct(data: IProductInput) {
     revalidatePath('/admin/products')
     return {
       success: true,
-      message: 'Product created successfully',
+      message: 'تم إنشاء المنتج بنجاح',
     }
   } catch (error) {
     console.error('Error creating product:', error)
@@ -107,7 +107,7 @@ export async function updateProduct(data: z.infer<typeof ProductUpdateSchema>) {
         brand: productData.brand,
         description: productData.description,
         price: product.price,
-        listPrice: product.listPrice,
+        listPrice: productData.listPrice,
         countInStock: productData.countInStock,
         tags: productData.tags,
         colors: productData.colors,
@@ -122,7 +122,7 @@ export async function updateProduct(data: z.infer<typeof ProductUpdateSchema>) {
     revalidatePath('/admin/products')
     return {
       success: true,
-      message: 'Product updated successfully',
+      message: 'تم تحديث المنتج بنجاح',
     }
   } catch (error) {
     console.error('Error updating product:', error)
@@ -140,7 +140,7 @@ export async function deleteProduct(id: string) {
     revalidatePath('/admin/products')
     return {
       success: true,
-      message: 'Product deleted successfully',
+      message: 'تم حذف المنتج بنجاح',
     }
   } catch (error) {
     console.error('Error deleting product:', error)
@@ -811,6 +811,56 @@ export async function getBestSellingProducts() {
     return result
   } catch (error) {
     console.error('Error fetching best selling products:', error)
+    return []
+  }
+}
+
+export async function getProductsByCategory(category: string) {
+  try {
+    // Check cache first
+    const cacheKey = `productsByCategory_${category}`
+    const cached = getCachedData(cacheKey)
+    if (cached) return cached
+
+    // Get products by category
+    const products = await prisma.product.findMany({
+      where: {
+        category: category,
+        isPublished: true,
+      },
+      orderBy: [
+        { numSales: 'desc' },
+        { avgRating: 'desc' }
+      ],
+      take: 8,
+      select: {
+        name: true,
+        slug: true,
+        images: true,
+        price: true,
+        listPrice: true,
+        avgRating: true,
+        numReviews: true,
+      }
+    })
+    
+    const result = products.map((product: any) => ({
+      name: product.name,
+      slug: product.slug,
+      image: Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : '',
+      images: Array.isArray(product.images) ? product.images : [],
+      price: Number(product.price),
+      listPrice: Number(product.listPrice),
+      avgRating: Number(product.avgRating),
+      numReviews: Number(product.numReviews),
+    }))
+    
+    // Cache the result
+    setCachedData(cacheKey, result)
+    
+    return result
+  } catch (error) {
+    console.error('Error fetching products by category:', error)
     return []
   }
 }

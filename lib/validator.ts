@@ -18,7 +18,7 @@ export const ReviewInputSchema = z.object({
   product: MongoId,
   user: MongoId,
   isVerifiedPurchase: z.boolean(),
-  title: z.string().min(1, 'Title is required'),
+  title: z.string().optional().default(''),
   comment: z.string().min(1, 'Comment is required'),
   rating: z.coerce
     .number()

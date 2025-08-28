@@ -31,6 +31,8 @@ import { UploadButton } from '@/lib/uploadthing'
 import { ProductInputSchema, ProductUpdateSchema } from '@/lib/validator'
 import { Checkbox } from '@/components/ui/checkbox'
 import { toSlug } from '@/lib/utils'
+import { useLoading } from '@/hooks/use-loading'
+import { LoadingSpinner } from '@/components/shared/loading-overlay'
 
 const productDefaultValues: IProductInput = {
   name: '',
@@ -66,6 +68,7 @@ const ProductForm = ({
   const [categories, setCategories] = useState<string[]>([])
   const [isLoadingCategories, setIsLoadingCategories] = useState(true)
   const [newCategoryInput, setNewCategoryInput] = useState('')
+  const { isLoading: isSubmitting, withLoading } = useLoading()
 
   const form = useForm<IProductInput>({
     resolver:
@@ -110,7 +113,7 @@ const ProductForm = ({
   }, [form])
 
   const { toast } = useToast()
-  async function onSubmit(values: IProductInput) {
+  const onSubmit = async (values: IProductInput) => {
     // Validate that category is not a placeholder value
     if (values.category === '__new__' || values.category === '__loading__' || values.category === '__no_categories__') {
       toast({
@@ -135,46 +138,50 @@ const ProductForm = ({
       slug: toSlug(values.name)
     }
 
-    if (type === 'Create') {
-      const res = await createProduct(productData)
-      if (!res.success) {
-        toast({
-          variant: 'destructive',
-          description: res.message,
-        })
-      } else {
-        toast({
-          description: res.message,
-        })
-        router.push(`/admin/products`)
-      }
-    }
-    if (type === 'Update') {
-      if (!productId) {
-        router.push(`/admin/products`)
-        return
-      }
-      try {
-        const res = await updateProduct({ ...productData, _id: productId })
-        
-        if (!res.success) {
-          toast({
-            variant: 'destructive',
-            description: res.message,
-          })
-        } else {
-          toast({
-            description: res.message,
-          })
-          router.push(`/admin/products`)
+    await withLoading(
+      async () => {
+        if (type === 'Create') {
+          const res = await createProduct(productData)
+          if (!res.success) {
+            toast({
+              variant: 'destructive',
+              description: res.message,
+            })
+          } else {
+            toast({
+              description: res.message,
+            })
+            router.push(`/admin/products`)
+          }
         }
-      } catch (error) {
-        toast({
-          variant: 'destructive',
-          description: 'حدث خطأ غير متوقع أثناء التحديث',
-        })
+        if (type === 'Update') {
+          if (!productId) {
+            router.push(`/admin/products`)
+            return
+          }
+          try {
+            const res = await updateProduct({ ...productData, _id: productId })
+            
+            if (!res.success) {
+              toast({
+                variant: 'destructive',
+                description: res.message,
+              })
+            } else {
+              toast({
+                description: res.message,
+              })
+              router.push(`/admin/products`)
+            }
+          } catch (error) {
+            toast({
+              variant: 'destructive',
+              description: 'حدث خطأ غير متوقع أثناء التحديث',
+            })
+          }
+        }
       }
-    }
+    )
   }
   const images = form.watch('images')
 
@@ -468,16 +475,16 @@ const ProductForm = ({
                   <Button
           type='button'
           size='lg'
-          disabled={form.formState.isSubmitting}
+          disabled={isSubmitting}
           onClick={() => {
             const values = form.getValues()
             onSubmit(values)
           }}
           className='button col-span-2 w-full bg-blue-600 hover:bg-blue-700 text-white'
         >
-          {form.formState.isSubmitting ? 'جاري الإرسال...' : `${type === 'Create' ? 'إنشاء' : 'تحديث'} المنتج`}
+          {isSubmitting ? 'جاري الإرسال...' : `${type === 'Create' ? 'إنشاء' : 'تحديث'} المنتج`}
         </Button>
-        {form.formState.isSubmitting && (
+        {isSubmitting && (
           <p className='text-sm text-gray-600 text-center'>
             {type === 'Update' ? 'جاري تحديث المنتج...' : 'جاري إنشاء المنتج...'}
           </p>

@@ -117,18 +117,18 @@ export default function SearchFilters({ categories, tags, maxPrice }: SearchFilt
   ]
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border-0 p-6" dir="rtl">
+    <div className="bg-white rounded-xl shadow-sm border-0 p-4 sm:p-6" dir="rtl">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <Filter className="h-5 w-5 text-blue-600" />
-          <h3 className="font-semibold text-xl text-gray-800">{translations.filters}</h3>
+      <div className="flex items-center justify-between mb-4 sm:mb-6">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Filter className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+          <h3 className="font-semibold text-lg sm:text-xl text-gray-800">{translations.filters}</h3>
         </div>
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setIsOpen(!isOpen)}
-          className="p-2 hover:bg-gray-100 rounded-lg"
+          className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg"
         >
           {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
@@ -138,9 +138,9 @@ export default function SearchFilters({ categories, tags, maxPrice }: SearchFilt
         <>
           {/* Active Filters */}
           {activeFilters.length > 0 && (
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-sm font-medium text-gray-700">{translations.filters}:</span>
+            <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                <span className="text-xs sm:text-sm font-medium text-gray-700">{translations.filters}:</span>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -155,16 +155,16 @@ export default function SearchFilters({ categories, tags, maxPrice }: SearchFilt
                   <Badge
                     key={index}
                     variant="secondary"
-                    className="flex items-center gap-1 bg-blue-100 text-blue-800 hover:bg-blue-200"
+                    className="flex items-center gap-1 bg-blue-100 text-blue-800 hover:bg-blue-200 text-xs"
                   >
                     {filter.label}
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => removeFilter(filter.key, filter.value)}
-                      className="h-4 w-4 p-0 hover:bg-transparent hover:text-blue-900"
+                      className="h-3 w-3 sm:h-4 sm:w-4 p-0 hover:bg-transparent hover:text-blue-900"
                     >
-                      <X className="h-3 w-3" />
+                      <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                     </Button>
                   </Badge>
                 ))}
@@ -173,9 +173,9 @@ export default function SearchFilters({ categories, tags, maxPrice }: SearchFilt
           )}
 
           {/* Category Filter */}
-          <div className="mb-6">
-            <Label className="text-sm font-semibold mb-4 block text-gray-800">{translations.category}</Label>
-            <div className="space-y-3">
+          <div className="mb-4 sm:mb-6">
+            <Label className="text-sm font-semibold mb-3 sm:mb-4 block text-gray-800">{translations.category}</Label>
+            <div className="space-y-2 sm:space-y-3">
               <div className="flex items-center space-x-2 space-x-reverse">
                 <Checkbox
                   id="all-categories"
@@ -183,7 +183,7 @@ export default function SearchFilters({ categories, tags, maxPrice }: SearchFilt
                   onCheckedChange={() => handleCategoryChange('')}
                   className="text-blue-600"
                 />
-                <Label htmlFor="all-categories" className="text-sm text-gray-700 cursor-pointer">
+                <Label htmlFor="all-categories" className="text-xs sm:text-sm text-gray-700 cursor-pointer">
                   {translations.allCategories}
                 </Label>
               </div>
@@ -195,7 +195,7 @@ export default function SearchFilters({ categories, tags, maxPrice }: SearchFilt
                     onCheckedChange={() => handleCategoryChange(category)}
                     className="text-blue-600"
                   />
-                  <Label htmlFor={category} className="text-sm text-gray-700 cursor-pointer">
+                  <Label htmlFor={category} className="text-xs sm:text-sm text-gray-700 cursor-pointer">
                     {category}
                   </Label>
                 </div>
@@ -203,12 +203,12 @@ export default function SearchFilters({ categories, tags, maxPrice }: SearchFilt
             </div>
           </div>
 
-          <Separator className="my-6" />
+          <Separator className="my-4 sm:my-6" />
 
           {/* Tags Filter */}
-          <div className="mb-6">
-            <Label className="text-sm font-semibold mb-4 block text-gray-800">{translations.tags}</Label>
-            <div className="space-y-3">
+          <div className="mb-4 sm:mb-6">
+            <Label className="text-sm font-semibold mb-3 sm:mb-4 block text-gray-800">{translations.tags}</Label>
+            <div className="space-y-2 sm:space-y-3">
               {tags.map((tag) => (
                 <div key={tag} className="flex items-center space-x-2 space-x-reverse">
                   <Checkbox
@@ -217,7 +217,7 @@ export default function SearchFilters({ categories, tags, maxPrice }: SearchFilt
                     onCheckedChange={() => handleTagChange(tag)}
                     className="text-blue-600"
                   />
-                  <Label htmlFor={tag} className="text-sm text-gray-700 cursor-pointer">
+                  <Label htmlFor={tag} className="text-xs sm:text-sm text-gray-700 cursor-pointer">
                     {tag}
                   </Label>
                 </div>
@@ -225,12 +225,12 @@ export default function SearchFilters({ categories, tags, maxPrice }: SearchFilt
             </div>
           </div>
 
-          <Separator className="my-4" />
+          <Separator className="my-3 sm:my-4" />
 
           {/* Price Range Filter */}
-          <div className="mb-6">
-            <Label className="text-sm font-semibold mb-4 block text-gray-800">{translations.priceRange}</Label>
-            <div className="space-y-4">
+          <div className="mb-4 sm:mb-6">
+            <Label className="text-sm font-semibold mb-3 sm:mb-4 block text-gray-800">{translations.priceRange}</Label>
+            <div className="space-y-3 sm:space-y-4">
               <Slider
                 value={priceRange}
                 onValueChange={handlePriceChange}
@@ -239,25 +239,25 @@ export default function SearchFilters({ categories, tags, maxPrice }: SearchFilt
                 step={1}
                 className="w-full"
               />
-              <div className="flex items-center gap-3">
-                <div className="flex-1">
+              <div className="flex flex-col sm:flex-row items-center gap-3">
+                <div className="flex-1 w-full sm:w-auto">
                   <Label className="text-xs text-gray-600 mb-2 block">{translations.from}</Label>
                   <Input
                     type="number"
                     value={priceRange[0]}
                     onChange={(e) => setPriceRange([parseInt(e.target.value) || 0, priceRange[1]])}
-                    className="text-sm border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                    className="text-xs sm:text-sm border-gray-200 focus:border-blue-500 focus:ring-blue-500 input-mobile"
                     min={0}
                     max={priceRange[1]}
                   />
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 w-full sm:w-auto">
                   <Label className="text-xs text-gray-600 mb-2 block">{translations.to}</Label>
                   <Input
                     type="number"
                     value={priceRange[1]}
                     onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value) || maxPrice])}
-                    className="text-sm border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                    className="text-xs sm:text-sm border-gray-200 focus:border-blue-500 focus:ring-blue-500 input-mobile"
                     min={priceRange[0]}
                     max={maxPrice}
                   />
@@ -265,7 +265,7 @@ export default function SearchFilters({ categories, tags, maxPrice }: SearchFilt
               </div>
               <Button
                 onClick={applyPriceFilter}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white btn-mobile"
                 size="sm"
               >
                 {translations.apply}

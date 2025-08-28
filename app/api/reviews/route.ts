@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
         user: session.user.id,
         rating,
         comment,
-        title,
+        title: title || '',
         isVerifiedPurchase: false, // Can be implemented later for purchase verification
       },
       path: `/product/${productId}`,

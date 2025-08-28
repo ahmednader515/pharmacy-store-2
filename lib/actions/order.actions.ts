@@ -163,7 +163,7 @@ export async function updateOrderToPaid(orderId: string) {
     // Mock mode removed: always use database
     
     if (!connection.prisma) {
-      return { success: false, message: 'Database connection failed' }
+      return { success: false, message: 'فشل الاتصال بقاعدة البيانات' }
     }
     
     const order = await connection.prisma.order.findUnique({
@@ -188,7 +188,7 @@ export async function updateOrderToPaid(orderId: string) {
     await updateProductStock(orderId)
     if (order.user.phone) await sendPurchaseReceipt({ order })
     revalidatePath(`/account/orders/${orderId}`)
-    return { success: true, message: 'Order paid successfully' }
+    return { success: true, message: 'تم دفع الطلب بنجاح' }
   } catch (err) {
     return { success: false, message: formatError(err) }
   }
@@ -231,7 +231,7 @@ export async function deliverOrder(orderId: string) {
     // Mock mode removed: always use database
     
     if (!connection.prisma) {
-      return { success: false, message: 'Database connection failed' }
+      return { success: false, message: 'فشل الاتصال بقاعدة البيانات' }
     }
     
     const order = await connection.prisma.order.findUnique({
@@ -255,7 +255,7 @@ export async function deliverOrder(orderId: string) {
     
     if (order.user.phone) await sendAskReviewOrderItems({ order })
     revalidatePath(`/account/orders/${orderId}`)
-    return { success: true, message: 'Order delivered successfully' }
+    return { success: true, message: 'تم تسليم الطلب بنجاح' }
   } catch (err) {
     return { success: false, message: formatError(err) }
   }
@@ -268,7 +268,7 @@ export async function deleteOrder(id: string) {
     
     
     if (!connection.prisma) {
-      return { success: false, message: 'Database connection failed' }
+      return { success: false, message: 'فشل الاتصال بقاعدة البيانات' }
     }
     
     const res = await connection.prisma.order.delete({
@@ -278,7 +278,7 @@ export async function deleteOrder(id: string) {
     revalidatePath('/admin/orders')
     return {
       success: true,
-      message: 'Order deleted successfully',
+      message: 'تم حذف الطلب بنجاح',
     }
   } catch (error) {
     return { success: false, message: formatError(error) }

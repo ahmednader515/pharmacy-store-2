@@ -202,38 +202,71 @@ export default function OverviewReport() {
               <CardTitle>المبيعات الحديثة</CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className='text-right'>المشتري</TableHead>
-                    <TableHead className='text-right'>التاريخ</TableHead>
-                    <TableHead className='text-right'>المجموع</TableHead>
-                    <TableHead className='text-right'>الإجراءات</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(data.latestOrders || []).map((order: IOrderList) => (
-                    <TableRow key={order.id}>
-                      <TableCell className='text-right'>
-                        {order.user ? order.user.name : 'مستخدم محذوف'}
-                      </TableCell>
-
-                      <TableCell className='text-right'>
-                        {formatDateTime(order.createdAt).dateOnly}
-                      </TableCell>
-                      <TableCell className='text-right'>
-                        <ProductPrice price={order.totalPrice} plain />
-                      </TableCell>
-
-                      <TableCell className='text-right'>
-                        <Link href={`/admin/orders/${order.id}`}>
-                          <span className='px-2'>التفاصيل</span>
-                        </Link>
-                      </TableCell>
+              {/* Desktop Table - Hidden on mobile */}
+              <div className='hidden md:block'>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className='text-right'>المشتري</TableHead>
+                      <TableHead className='text-right'>التاريخ</TableHead>
+                      <TableHead className='text-right'>المجموع</TableHead>
+                      <TableHead className='text-right'>الإجراءات</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {(data.latestOrders || []).map((order: IOrderList) => (
+                      <TableRow key={order.id}>
+                        <TableCell className='text-right'>
+                          {order.user ? order.user.name : 'مستخدم محذوف'}
+                        </TableCell>
+
+                        <TableCell className='text-right'>
+                          {formatDateTime(order.createdAt).dateOnly}
+                        </TableCell>
+                        <TableCell className='text-right'>
+                          <ProductPrice price={order.totalPrice} plain />
+                        </TableCell>
+
+                        <TableCell className='text-right'>
+                          <Link href={`/admin/orders/${order.id}`}>
+                            <span className='px-2'>التفاصيل</span>
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile Cards - Visible only on mobile */}
+              <div className='md:hidden space-y-3'>
+                {(data.latestOrders || []).map((order: IOrderList) => (
+                  <div key={order.id} className="bg-gray-50 border border-gray-200 rounded-lg p-3 space-y-2">
+                    {/* Customer Name */}
+                    <div className="font-medium text-gray-900">
+                      {order.user ? order.user.name : 'مستخدم محذوف'}
+                    </div>
+                    
+                    {/* Order Details */}
+                    <div className="flex items-center justify-between text-sm text-gray-600">
+                      <span>{formatDateTime(order.createdAt).dateOnly}</span>
+                      <span className="font-semibold text-green-600">
+                        <ProductPrice price={order.totalPrice} plain />
+                      </span>
+                    </div>
+                    
+                    {/* Actions */}
+                    <div className="border-t border-gray-200 pt-2">
+                      <Link 
+                        href={`/admin/orders/${order.id}`}
+                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                      >
+                        عرض التفاصيل
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </div>

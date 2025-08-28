@@ -26,6 +26,8 @@ export async function generateMetadata() {
   };
 }
 
+export const dynamic = 'force-dynamic'
+
 export default async function AppLayout({
   children,
 }: {
@@ -35,20 +37,17 @@ export default async function AppLayout({
   const currencyCookie = (await cookies()).get("currency");
   const currency = currencyCookie ? currencyCookie.value : "EGP";
   
-  let session;
-  try {
-    session = await auth();
-  } catch (error) {
-    console.error('Auth error:', error);
-    session = null;
-  }
+  // Do not pass a server session to avoid hydration drift; client will resolve it
 
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+      </head>
       <body
         className={`min-h-screen ${cairo.variable} font-cairo antialiased`}
       >
-        <ClientProviders session={session}>
+        <ClientProviders>
           {children}
         </ClientProviders>
       </body>

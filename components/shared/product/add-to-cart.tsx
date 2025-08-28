@@ -5,9 +5,11 @@ import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Minus, Plus, ShoppingCart } from 'lucide-react'
-import { toast } from '@/hooks/use-toast'
+import { useToast } from '@/hooks/use-toast'
 import useCartStore from '@/hooks/use-cart-store'
 import { IProduct } from '@/types'
+import { useLoading } from '@/hooks/use-loading'
+import { LoadingSpinner } from '@/components/shared/loading-overlay'
 import SelectVariant from './select-variant'
 
 interface AddToCartProps {
@@ -19,6 +21,8 @@ export default function AddToCart({ product, className }: AddToCartProps) {
   const [quantity, setQuantity] = useState(1)
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null)
   const { addItem } = useCartStore()
+  const { toast } = useToast()
+  const { isLoading: isAddingToCart, withLoading } = useLoading()
 
   const handleQuantityChange = (value: number) => {
     const newQuantity = Math.max(1, Math.min(99, quantity + value))
@@ -35,36 +39,32 @@ export default function AddToCart({ product, className }: AddToCartProps) {
       return
     }
 
-    try {
-      await addItem({
-        product: product.id,
-        name: product.name,
-        slug: product.slug,
-        category: product.category,
-        image: product.images[0],
-        price: Number(product.price), // Convert to number to prevent toFixed errors
-        countInStock: product.countInStock,
-        color: selectedVariant || product.colors[0] || '',
-        size: product.sizes[0] || '',
-        quantity: 1,
-        clientId: `${product.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      }, quantity)
+    await withLoading(
+      async () => {
+        await addItem({
+          product: product.id,
+          name: product.name,
+          slug: product.slug,
+          category: product.category,
+          image: product.images[0],
+          price: Number(product.price), // Convert to number to prevent toFixed errors
+          countInStock: product.countInStock,
+          color: selectedVariant || product.colors[0] || '',
+          size: product.sizes[0] || '',
+          quantity: 1,
+          clientId: `${product.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        }, quantity)
 
-      toast({
-        title: 'تمت الإضافة إلى السلة',
-        description: `تم إضافة ${product.name} إلى سلة التسوق الخاصة بك`,
-        variant: 'default',
-      })
+        toast({
+          title: 'تمت الإضافة إلى السلة',
+          description: `تم إضافة ${product.name} إلى سلة التسوق الخاصة بك`,
+          variant: 'default',
+        })
 
-      // Reset quantity
-      setQuantity(1)
-    } catch (error) {
-      toast({
-        title: 'خطأ',
-        description: 'فشل في إضافة العنصر إلى السلة',
-        variant: 'destructive',
-      })
-    }
+        // Reset quantity
+        setQuantity(1)
+      }
+    )
   }
 
   return (
@@ -139,12 +139,17 @@ export default function AddToCart({ product, className }: AddToCartProps) {
 
       <Button
         onClick={handleAddToCart}
-        className='w-full'
-        size='lg'
-        disabled={product.countInStock === 0}
+        className="w-full rounded-full font-bold"
+        disabled={isAddingToCart}
       >
-        <ShoppingCart className='ml-2 h-5 w-5' />
-        {product.countInStock === 0 ? 'نفذت الكمية' : 'أضف إلى السلة'}
+        {isAddingToCart ? (
+          <LoadingSpinner size="sm" text="جاري الإضافة..." />
+        ) : (
+          <>
+            <ShoppingCart className="ml-2 h-4 w-4" />
+            أضف إلى السلة
+          </>
+        )}
       </Button>
     </div>
   )

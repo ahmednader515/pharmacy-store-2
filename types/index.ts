@@ -20,11 +20,12 @@ import {
 import { z } from 'zod'
 
 export type IReviewInput = z.infer<typeof ReviewInputSchema>
-export type IReviewDetails = IReviewInput & {
+export type IReviewDetails = Omit<IReviewInput, 'user'> & {
   id: string
   createdAt: string
   user: {
     name: string
+    id?: string
   }
 }
 export type IProductInput = z.infer<typeof ProductInputSchema>

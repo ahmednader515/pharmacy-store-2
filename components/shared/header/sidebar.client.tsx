@@ -9,7 +9,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { Menu, UserCircle, X, ChevronRight, Home } from "lucide-react";
+import { Menu, ChevronRight, X } from "lucide-react";
 import Link from "next/link";
 import { SignOut } from "@/lib/actions/user.actions";
 
@@ -56,69 +56,39 @@ export default function SidebarClient({
   return (
     <Drawer>
       <DrawerTrigger asChild>
-        <Button variant="ghost" size="icon" className="mr-2">
-          <Menu className="h-5 w-5" />
+        <Button variant="ghost" size="icon" className="h-10 w-10 sm:h-12 sm:w-12 bg-white hover:bg-gray-100 text-gray-800 border border-gray-200 transition-all duration-200 hover:scale-105 shadow-sm">
+          <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
           <span className="sr-only">Open menu</span>
         </Button>
       </DrawerTrigger>
-      <DrawerContent className="w-[350px] mt-0 top-0">
-        <div className="flex flex-col h-full">
-          <div className="bg-gray-800 text-foreground flex items-center justify-between  ">
-            <DrawerHeader>
-              <DrawerTitle className="flex items-center">
-                <UserCircle className="h-6 w-6 mr-2" />
-                {session ? (
-                  <DrawerClose asChild>
-                    <Link href="/account">
-                      <span className="text-lg font-semibold">
-                        Hello, {session.name}
-                      </span>
-                    </Link>
-                  </DrawerClose>
-                ) : (
-                  <DrawerClose asChild>
-                    <Link href="/sign-in" className="sidebar-link">
-                      <span className="text-lg font-semibold">
-                        Hello, sign in
-                      </span>
-                    </Link>
-                  </DrawerClose>
-                )}
-              </DrawerTitle>
-              <DrawerDescription></DrawerDescription>
-            </DrawerHeader>
-            <DrawerClose asChild>
-              <Button variant="ghost" size="icon" className="mr-2">
-                <X className="h-5 w-5" />
-                <span className="sr-only">Close</span>
-              </Button>
-            </DrawerClose>
-          </div>
-
-          <div className="flex-1 overflow-y-auto">
-            <div className="p-4 border-b">
-              <h2 className="text-lg font-semibold">
-                Shop By Department
-              </h2>
-            </div>
-            <nav className="flex flex-col">
-              <DrawerClose asChild>
-                <Link
-                  href="/"
-                  className="flex items-center justify-between item-button sidebar-link"
-                >
-                  <span className="flex items-center gap-2">
-                    <Home className="h-4 w-4" />
-                    الصفحة الرئيسية
-                  </span>
-                  <ChevronRight className="h-4 w-4" />
-                </Link>
-              </DrawerClose>
+                           <DrawerContent className="w-full max-w-sm mt-0 top-0 right-0 bg-blue-600 border-0">
+          <div className="flex flex-col h-full bg-blue-600 text-white min-h-screen">
+           {/* Header with Title and Close Button */}
+           <div className="flex items-center justify-between p-4 border-b border-blue-500">
+             <DrawerTitle className="text-lg font-semibold text-right">
+               القائمة
+             </DrawerTitle>
+             <DrawerClose asChild>
+               <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-blue-700">
+                 <X className="h-4 w-4" />
+                 <span className="sr-only">إغلاق</span>
+               </Button>
+             </DrawerClose>
+           </div>
+           
+           {/* Categories Section */}
+           <div className="flex-1 overflow-y-auto p-4">
+             <div className="mb-6">
+               <h2 className="text-lg font-semibold text-right mb-4">
+                 الأقسام
+               </h2>
+             </div>
+            <nav className="flex flex-col space-y-2">
               {categories.map((category) => (
                 <DrawerClose asChild key={category}>
                   <Link
                     href={`/search?category=${category}`}
-                    className={`flex items-center justify-between item-button sidebar-link`}
+                    className="flex items-center justify-between p-3 rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm"
                   >
                     <span>{categoryTranslations[category] || category}</span>
                     <ChevronRight className="h-4 w-4" />
@@ -128,39 +98,17 @@ export default function SidebarClient({
             </nav>
           </div>
 
-          <div className="border-t flex flex-col ">
-            <div className="p-4">
-              <h2 className="text-lg font-semibold">
-                Help & Settings
-              </h2>
-            </div>
-            <DrawerClose asChild>
-              <Link href="/account" className="item-button sidebar-link">
-                Your account
-              </Link>
-            </DrawerClose>
-            <DrawerClose asChild>
-              <Link
-                href="/page/customer-service"
-                className="item-button sidebar-link"
-              >
-                Customer Service
-              </Link>
-            </DrawerClose>
-            {session ? (
+          {/* Sign Out Button - Bottom */}
+          {session && (
+            <div className="p-4 border-t border-blue-500">
               <Button
-                className="w-full justify-start item-button text-base"
-                variant="ghost"
+                className="w-full bg-white text-blue-600 hover:bg-gray-100 font-medium"
                 onClick={handleSignOut}
               >
-                Sign out
+                تسجيل الخروج
               </Button>
-            ) : (
-              <Link href='/sign-in' className='item-button sidebar-link'>
-                Sign in
-              </Link>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </DrawerContent>
     </Drawer>

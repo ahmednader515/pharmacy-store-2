@@ -99,6 +99,51 @@ input, textarea, select, button, label, span, div, p, h1, h2, h3, h4, h5, h6, a,
   order: 1;
 }
 
+/* Mobile Responsive Adjustments for Auth Pages */
+@media (max-width: 768px) {
+  .signin-page-rtl .logo-section {
+    order: 2;
+    margin-bottom: 1rem;
+  }
+  
+  .signin-page-rtl .form-section {
+    order: 1;
+    margin-bottom: 1rem;
+  }
+  
+  /* Ensure forms are properly sized on mobile */
+  .signin-page-rtl .form-section .card,
+  .signin-page-rtl .form-section > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+  
+  /* Ensure form content takes full width on mobile */
+  .signin-page-rtl .form-section .card .card-content,
+  .signin-page-rtl .form-section > div > div {
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  /* Adjust logo size for mobile */
+  .signin-page-rtl .logo-section .w-32 {
+    width: 6rem;
+    height: 6rem;
+  }
+  
+  /* Ensure proper spacing on mobile */
+  .signin-page-rtl .space-y-6 > * + * {
+    margin-top: 1rem;
+  }
+  
+  .signin-page-rtl .space-y-8 > * + * {
+    margin-top: 1.5rem;
+  }
+}
+
 @media (min-width: 1024px) {
   .signin-page-rtl .logo-section {
     order: 1;
@@ -241,6 +286,234 @@ input, textarea, select, button, label, span, div, p, h1, h2, h3, h4, h5, h6, a,
   .flex-between {
     @apply flex justify-between items-center;
   }
+
+  /* Mobile-First Responsive Design System */
+  /* Container responsive padding */
+  .container-responsive {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+  
+  /* Mobile-first grid systems */
+  .grid-mobile {
+    @apply grid grid-cols-1 gap-4;
+  }
+  
+  .grid-tablet {
+    @apply grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6;
+  }
+  
+  .grid-desktop {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6;
+  }
+  
+  /* Mobile-first spacing */
+  .section-mobile {
+    @apply py-6 sm:py-8 lg:py-12;
+  }
+  
+  .section-mobile-sm {
+    @apply py-4 sm:py-6 lg:py-8;
+  }
+  
+  /* Mobile-first typography */
+  .text-mobile-xl {
+    @apply text-xl sm:text-2xl lg:text-3xl;
+  }
+  
+  .text-mobile-lg {
+    @apply text-lg sm:text-xl lg:text-2xl;
+  }
+  
+  .text-mobile-base {
+    @apply text-base sm:text-lg;
+  }
+  
+  /* Mobile-first buttons */
+  .btn-mobile {
+    @apply w-full sm:w-auto px-4 py-2 sm:px-6 sm:py-3;
+  }
+  
+  .btn-mobile-lg {
+    @apply w-full sm:w-auto px-6 py-3 sm:px-8 sm:py-4;
+  }
+  
+  /* Mobile-first cards */
+  .card-mobile {
+    @apply p-4 sm:p-6 lg:p-8;
+  }
+  
+  /* Mobile-first navigation */
+  .nav-mobile {
+    @apply flex flex-col sm:flex-row items-center gap-4 sm:gap-6;
+  }
+  
+  /* Mobile-first forms */
+  .form-mobile {
+    @apply space-y-4 sm:space-y-6;
+  }
+  
+  .input-mobile {
+    @apply w-full px-3 py-2 sm:px-4 sm:py-3;
+  }
+  
+  /* Mobile-first tables */
+  .table-mobile {
+    @apply overflow-x-auto;
+  }
+  
+  .table-mobile th,
+  .table-mobile td {
+    @apply px-2 py-2 sm:px-4 sm:py-3 text-sm sm:text-base;
+  }
+  
+  /* Mobile-first sidebar */
+  .sidebar-mobile {
+    @apply fixed inset-y-0 right-0 z-50 w-full max-w-sm bg-white shadow-xl transform transition-transform duration-300 ease-in-out;
+  }
+  
+  .sidebar-mobile.closed {
+    @apply translate-x-full;
+  }
+  
+  .sidebar-mobile.open {
+    @apply translate-x-0;
+  }
+  
+  /* Mobile-first overlay */
+  .overlay-mobile {
+    @apply fixed inset-0 bg-black bg-opacity-50 z-40;
+  }
+  
+  /* Mobile-first carousel */
+  .carousel-mobile {
+    @apply -mx-4 sm:-mx-6 lg:-mx-8;
+  }
+  
+  .carousel-item-mobile {
+    @apply px-2 sm:px-3 lg:px-4;
+  }
+  
+  /* Mobile-first search */
+  .search-mobile {
+    @apply w-full max-w-full sm:max-w-md lg:max-w-2xl;
+  }
+  
+  /* Mobile-first filters */
+  .filters-mobile {
+    @apply w-full lg:w-1/4;
+  }
+  
+  .filters-mobile .filters-content {
+    @apply lg:sticky lg:top-4;
+  }
+  
+  /* Mobile-first product grid */
+  .product-grid-mobile {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6;
+  }
+  
+  /* Mobile-first admin layout */
+  .admin-mobile {
+    @apply flex flex-col lg:flex-row min-h-screen;
+  }
+  
+  .admin-sidebar-mobile {
+    @apply w-full lg:w-64 bg-gray-900 text-white;
+  }
+  
+  .admin-content-mobile {
+    @apply flex-1 p-4 sm:p-6 lg:p-8;
+  }
+  
+  /* Mobile-first checkout */
+  .checkout-mobile {
+    @apply grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8;
+  }
+  
+  /* Mobile-first cart */
+  .cart-mobile {
+    @apply grid grid-cols-1 lg:grid-cols-3 gap-6;
+  }
+  
+  .cart-items-mobile {
+    @apply lg:col-span-2;
+  }
+  
+  .cart-summary-mobile {
+    @apply lg:col-span-1;
+  }
+  
+  /* Mobile-first product details */
+  .product-details-mobile {
+    @apply grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8;
+  }
+  
+  /* Mobile-first header */
+  .header-mobile {
+    @apply flex flex-col sm:flex-row items-center gap-4 sm:gap-6;
+  }
+  
+  .header-logo-mobile {
+    @apply flex items-center gap-2 sm:gap-3;
+  }
+  
+  .header-search-mobile {
+    @apply flex-1 w-full sm:max-w-md lg:max-w-2xl mx-0 sm:mx-4;
+  }
+  
+  .header-actions-mobile {
+    @apply flex items-center gap-2 sm:gap-4;
+  }
+  
+  /* Mobile-first footer */
+  .footer-mobile {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8;
+  }
+  
+  /* Mobile-first loading states */
+  .loading-mobile {
+    @apply p-4 sm:p-6 lg:p-8;
+  }
+  
+  /* Mobile-first error states */
+  .error-mobile {
+    @apply p-4 sm:p-6 lg:p-8 text-center;
+  }
+  
+  /* Mobile-first empty states */
+  .empty-mobile {
+    @apply p-8 sm:p-12 lg:p-16 text-center;
+  }
+  
+  /* Mobile-first modals */
+  .modal-mobile {
+    @apply fixed inset-4 sm:inset-8 lg:inset-16 z-50 bg-white rounded-lg shadow-2xl overflow-hidden;
+  }
+  
+  /* Mobile-first tooltips */
+  .tooltip-mobile {
+    @apply hidden sm:block;
+  }
+  
+  /* Mobile-first animations */
+  .animate-mobile {
+    @apply transition-all duration-300 ease-in-out;
+  }
+  
+  /* Mobile-first shadows */
+  .shadow-mobile {
+    @apply shadow-sm sm:shadow-md lg:shadow-lg;
+  }
+  
+  /* Mobile-first borders */
+  .border-mobile {
+    @apply border border-gray-200 sm:border-gray-300;
+  }
+  
+  /* Mobile-first rounded corners */
+  .rounded-mobile {
+    @apply rounded-lg sm:rounded-xl lg:rounded-2xl;
+  }
 }
 
 /* Admin Cairo Font Override */
@@ -298,4 +571,111 @@ input, textarea, select, button, label, span, div, p, h1, h2, h3, h4, h5, h6, a,
 .toast-enhanced .toast-close:hover {
   opacity: 1;
   transform: scale(1.1);
+}
+
+/* Admin Navigation Mobile Responsiveness */
+@media (max-width: 640px) {
+  .admin-container .bg-black {
+    position: relative;
+  }
+  
+  .admin-container .bg-black > div {
+    position: relative;
+    z-index: 40;
+  }
+  
+  /* Ensure sidebar appears above other content */
+  .admin-container .bg-black nav {
+    z-index: 50;
+  }
+  
+  /* Sidebar styling */
+  .admin-container .bg-black nav a {
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .admin-container .bg-black nav a:hover {
+    transform: translateX(-2px);
+  }
+  
+  /* Sidebar button improvements */
+  .admin-container .bg-black button {
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
+  }
+  
+  /* Sidebar navigation links - better touch targets */
+  .admin-container .bg-black nav a {
+    min-height: 48px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Smooth sidebar animations */
+  .admin-container .bg-black nav {
+    animation: slideInRight 0.3s ease-out;
+  }
+  
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  /* Sidebar specific styles */
+  .admin-container .bg-black .fixed {
+    animation: slideInRight 0.3s ease-out;
+  }
+  
+  /* Ensure sidebar is properly positioned */
+  .admin-container .bg-black .fixed.top-16 {
+    top: 4rem; /* 64px to match header height */
+  }
+  
+  /* Full screen modal animation */
+  .admin-container .bg-black .fixed.inset-0 {
+    animation: fadeIn 0.3s ease-out;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  /* Ensure modal is truly full screen on mobile */
+  @media (max-width: 640px) {
+    .admin-container .bg-black .fixed.inset-0 {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 9999 !important;
+    }
+    
+    /* Modal content layout for mobile */
+    .admin-container .bg-black .fixed.inset-0 nav {
+      flex: 1;
+      overflow-y: auto;
+    }
+    
+    /* Ensure sign out button stays at bottom */
+    .admin-container .bg-black .fixed.inset-0 > div:last-child {
+      position: sticky;
+      bottom: 0;
+      background: black;
+    }
+  }
 }

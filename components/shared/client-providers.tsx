@@ -10,16 +10,14 @@ import data from '@/lib/data'
 
 export default function ClientProviders({
   children,
-  session,
 }: {
   children: React.ReactNode
-  session?: any
 }) {
   const visible = useCartSidebar()
   const setting = data.settings[0];
 
   return (
-    <SessionProvider session={session}>
+    <SessionProvider refetchOnWindowFocus={true} refetchWhenOffline={true} staleTime={0}>
       <ThemeProvider>
         <AppInitializer>
           {visible ? (

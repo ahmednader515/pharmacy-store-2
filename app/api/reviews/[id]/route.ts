@@ -23,7 +23,7 @@ export async function DELETE(
       )
     }
 
-    const result = await deleteReview(reviewId, '/products')
+    const result = await deleteReview(reviewId, '')
 
     if (result.success) {
       return NextResponse.json(result)

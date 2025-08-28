@@ -1,50 +1,98 @@
-import { SearchIcon } from 'lucide-react'
+'use client'
 
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { getAllCategories } from '@/lib/actions/product.actions'
-
+import { Search as SearchIcon } from 'lucide-react'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../../ui/select'
-import data from '@/lib/data'
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 
-export default async function Search() {
-  const {
-    site: { name },
-  } = data.settings[0];
-  const categories = await getAllCategories()
+export default function Search() {
+  const [query, setQuery] = useState('')
+  const [isOpen, setIsOpen] = useState(false)
+  const router = useRouter()
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (query.trim()) {
+      router.push(`/search?q=${encodeURIComponent(query.trim())}`)
+      setIsOpen(false)
+      setQuery('')
+    }
+  }
 
   return (
-    <form action='/search' method='GET' className='flex items-stretch h-12' dir="rtl">
-      <Select name='category'>
-        <SelectTrigger className='w-auto h-full bg-gray-100 text-gray-700 border-l border-gray-300 rounded-r-md rounded-l-none font-cairo'>
-          <SelectValue placeholder="جميع الفئات" />
-        </SelectTrigger>
-        <SelectContent position='popper'>
-          <SelectItem value='all'>جميع الفئات</SelectItem>
-          {categories.map((category: string) => (
-            <SelectItem key={category} value={category}>
-              {category}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Input
-        className='flex-1 rounded-none bg-gray-100 text-gray-700 text-base h-full border-x-0 font-cairo'
-        placeholder={`البحث في ${name}...`}
-        name='q'
-        type='search'
-      />
-      <button
-        type='submit'
-        className='bg-blue-600 hover:bg-blue-700 text-white rounded-l-md rounded-r-none h-full px-4 py-2 transition-colors duration-200'
-      >
-        <SearchIcon className='w-5 h-5' />
-      </button>
-    </form>
+    <>
+      {/* Desktop Search Bar */}
+      <form onSubmit={handleSubmit} className="hidden md:block">
+        <div className="relative w-80 lg:w-96 xl:w-[500px]">
+          <Input
+            type="text"
+            placeholder="ابحث عن المنتجات..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+          <Button
+            type="submit"
+            className="absolute inset-y-0 left-0 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-l-lg text-sm sm:text-base"
+            disabled={!query.trim()}
+          >
+            بحث
+          </Button>
+        </div>
+      </form>
+
+      {/* Mobile Search Modal */}
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTrigger asChild>
+          <button className="md:hidden p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors duration-200">
+            <SearchIcon className="w-5 h-5" />
+          </button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-right">البحث عن المنتجات</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="mt-4">
+            <div className="relative">
+              <Input
+                type="text"
+                placeholder="ابحث عن المنتجات..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                autoFocus
+              />
+              <div className="absolute inset-y-0 left-2 pr-3 flex items-center pointer-events-none">
+                <SearchIcon className="h-5 w-5 text-gray-400" />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <Button
+                type="submit"
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                disabled={!query.trim()}
+              >
+                بحث
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsOpen(false)}
+              >
+                إلغاء
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

@@ -5,10 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import Rating from '@/components/shared/product/rating'
 import { Separator } from '@/components/ui/separator'
-import { Star, User, Lock, Edit, Trash2 } from 'lucide-react'
+import { Star, User, Lock, Trash2 } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { useLoading } from '@/hooks/use-loading'
+import { LoadingSpinner } from '@/components/shared/loading-overlay'
 
 interface Review {
   id: string
@@ -27,7 +29,7 @@ interface ReviewListProps {
 }
 
 export default function ReviewList({ productId }: ReviewListProps) {
-  const { data: session, status } = useSession()
+  const { data: session, status, update } = useSession()
   const router = useRouter()
   const [reviews, setReviews] = useState<Review[]>([])
   const [newReview, setNewReview] = useState({
@@ -35,26 +37,52 @@ export default function ReviewList({ productId }: ReviewListProps) {
     comment: '',
     title: '',
   })
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
-  const [editingReview, setEditingReview] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState({
-    rating: 0,
-    comment: '',
-    title: '',
-  })
+  
+  const { isLoading: isSubmitting, withLoading } = useLoading()
+  const { isLoading: isDeleting, withLoading: withDeleting } = useLoading()
 
-  // Fetch reviews on component mount
+  // Fetch reviews on component mount and page change
   useEffect(() => {
     fetchReviews()
   }, [productId, currentPage])
 
+  // Force session refresh if we're in loading state for too long
+  useEffect(() => {
+    if (status === 'loading') {
+      const timeoutId = setTimeout(() => {
+        if (status === 'loading') {
+          console.log('ReviewList: Forcing session refresh due to long loading state')
+          update()
+        }
+      }, 3000) // Wait 3 seconds before trying to refresh
+      
+      return () => clearTimeout(timeoutId)
+    }
+  }, [status, update])
+
+  // Force session refresh when component mounts to ensure we have the latest session
+  useEffect(() => {
+    console.log('ReviewList: Component mounted, checking session:', { status, sessionId: session?.user?.id })
+    // Force a session update to ensure we have the latest authentication state
+    update()
+  }, []) // Only run once when component mounts
+
+  // Additional session refresh mechanism for authentication state changes
+  useEffect(() => {
+    // If we detect a change in authentication state, force a session refresh
+    if (status === 'authenticated' && !session?.user?.id) {
+      console.log('ReviewList: Detected authenticated status but no session data, forcing refresh')
+      update()
+    }
+  }, [status, session, update])
+
   const fetchReviews = async () => {
     try {
       setIsLoading(true)
-      const response = await fetch(`/api/reviews?productId=${productId}&page=${currentPage}&limit=10`)
+      const response = await fetch(`/api/reviews?productId=${productId}&page=${currentPage}&limit=10`, { cache: 'no-store' })
       if (response.ok) {
         const data = await response.json()
         setReviews(data.data || [])
@@ -78,9 +106,7 @@ export default function ReviewList({ productId }: ReviewListProps) {
     setNewReview(prev => ({ ...prev, rating }))
   }
 
-  const handleEditRatingChange = (rating: number) => {
-    setEditForm(prev => ({ ...prev, rating }))
-  }
+  // No edit rating; user resubmits a new review to update
 
   const handleSubmitReview = async () => {
     if (!session) {
@@ -111,149 +137,80 @@ export default function ReviewList({ productId }: ReviewListProps) {
       return
     }
 
-    setIsSubmitting(true)
-    
-    try {
-      const response = await fetch('/api/reviews', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          productId, 
-          rating: newReview.rating, 
-          comment: newReview.comment,
-          title: newReview.title 
-        }),
-      })
-
-      if (response.ok) {
-        const result = await response.json()
-        toast({
-          title: 'تم إرسال التقييم',
-          description: result.message || 'شكراً لك على تقييمك!',
-          variant: 'default',
+    await withLoading(
+      async () => {
+        const response = await fetch('/api/reviews', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            productId, 
+            rating: newReview.rating, 
+            comment: newReview.comment,
+            title: newReview.title 
+          }),
         })
 
-        // Reset form and refresh reviews
-        setNewReview({ rating: 0, comment: '', title: '' })
-        setCurrentPage(1)
-        await fetchReviews()
-      } else {
-        const error = await response.json()
-        toast({
-          title: 'خطأ',
-          description: error.error || 'فشل في إرسال التقييم. يرجى المحاولة مرة أخرى.',
-          variant: 'destructive',
-        })
+        if (response.ok) {
+          const result = await response.json()
+          toast({
+            title: 'تم إرسال التقييم',
+            description: result.message || 'شكراً لك على تقييمك!',
+            variant: 'default',
+          })
+
+          // Reset form and refresh reviews
+          setNewReview({ rating: 0, comment: '', title: '' })
+          setCurrentPage(1)
+          await fetchReviews()
+        } else {
+          const error = await response.json()
+          toast({
+            title: 'خطأ',
+            description: error.error || 'فشل في إرسال التقييم. يرجى المحاولة مرة أخرى.',
+            variant: 'destructive',
+          })
+        }
       }
-    } catch (error) {
-      toast({
-        title: 'خطأ',
-        description: 'فشل في إرسال التقييم. يرجى المحاولة مرة أخرى.',
-        variant: 'destructive',
-      })
-    } finally {
-      setIsSubmitting(false)
-    }
+    )
   }
 
-  const handleEditReview = (review: Review) => {
-    setEditingReview(review.id)
-    setEditForm({
-      rating: review.rating,
-      comment: review.comment,
-      title: review.title || '',
-    })
-  }
+  // Edit feature removed
 
-  const handleUpdateReview = async () => {
-    if (!editingReview) return
-
-    if (editForm.rating === 0 || !editForm.comment.trim()) {
-      toast({
-        title: 'بيانات غير مكتملة',
-        description: 'يرجى إكمال جميع الحقول المطلوبة',
-        variant: 'destructive',
-      })
-      return
-    }
-
-    try {
-      const response = await fetch('/api/reviews', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          productId, 
-          rating: editForm.rating, 
-          comment: editForm.comment,
-          title: editForm.title 
-        }),
-      })
-
-      if (response.ok) {
-        toast({
-          title: 'تم تحديث التقييم',
-          description: 'تم تحديث تقييمك بنجاح',
-          variant: 'default',
-        })
-        setEditingReview(null)
-        await fetchReviews()
-      } else {
-        const error = await response.json()
-        toast({
-          title: 'خطأ',
-          description: error.error || 'فشل في تحديث التقييم',
-          variant: 'destructive',
-        })
-      }
-    } catch (error) {
-      toast({
-        title: 'خطأ',
-        description: 'فشل في تحديث التقييم',
-        variant: 'destructive',
-      })
-    }
-  }
+  // Update feature removed
 
   const handleDeleteReview = async (reviewId: string) => {
     if (!confirm('هل أنت متأكد من حذف هذا التقييم؟')) return
 
-    try {
-      const response = await fetch(`/api/reviews/${reviewId}`, {
-        method: 'DELETE',
-      })
+    await withDeleting(
+      async () => {
+        const response = await fetch(`/api/reviews/${reviewId}`, {
+          method: 'DELETE',
+        })
 
-      if (response.ok) {
-        toast({
-          title: 'تم حذف التقييم',
-          description: 'تم حذف تقييمك بنجاح',
-          variant: 'default',
-        })
-        await fetchReviews()
-      } else {
-        const error = await response.json()
-        toast({
-          title: 'خطأ',
-          description: error.error || 'فشل في حذف التقييم',
-          variant: 'destructive',
-        })
+        if (response.ok) {
+          toast({
+            title: 'تم حذف التقييم',
+            description: 'تم حذف تقييمك بنجاح',
+            variant: 'default',
+          })
+          await fetchReviews()
+        } else {
+          toast({
+            title: 'خطأ',
+            description: 'فشل في حذف التقييم. يرجى المحاولة مرة أخرى.',
+            variant: 'destructive',
+          })
+        }
       }
-    } catch (error) {
-      toast({
-        title: 'خطأ',
-        description: 'فشل في حذف التقييم',
-        variant: 'destructive',
-      })
-    }
+    )
   }
 
   const handleSignInClick = () => {
-    router.push('/sign-in')
+    const callbackUrl = typeof window !== 'undefined' ? window.location.pathname : '/'
+    router.push(`/sign-in?callbackUrl=${encodeURIComponent(callbackUrl)}`)
   }
 
-  const cancelEdit = () => {
-    setEditingReview(null)
-    setEditForm({ rating: 0, comment: '', title: '' })
-  }
+  // cancelEdit removed with editing feature
 
   if (isLoading) {
     return (
@@ -274,7 +231,12 @@ export default function ReviewList({ productId }: ReviewListProps) {
           <CardTitle>اكتب تقييماً</CardTitle>
         </CardHeader>
         <CardContent className='space-y-4'>
-          {!session ? (
+          {status === 'loading' ? (
+            <div className='text-center py-6'>
+              <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4'></div>
+              <p className='text-muted-foreground'>جاري التحقق من حالة تسجيل الدخول...</p>
+            </div>
+          ) : status !== 'authenticated' ? (
             <div className='text-center py-6'>
               <Lock className='h-12 w-12 mx-auto mb-4 text-muted-foreground' />
               <p className='text-muted-foreground mb-4'>
@@ -340,7 +302,11 @@ export default function ReviewList({ productId }: ReviewListProps) {
                 disabled={isSubmitting}
                 className='w-full'
               >
-                {isSubmitting ? 'جاري الإرسال...' : 'إرسال التقييم'}
+                {isSubmitting ? (
+                  <LoadingSpinner size="sm" text="جاري الإرسال..." />
+                ) : (
+                  'إرسال التقييم'
+                )}
               </Button>
             </>
           )}
@@ -365,65 +331,8 @@ export default function ReviewList({ productId }: ReviewListProps) {
             {reviews.map((review) => (
               <Card key={review.id}>
                 <CardContent className='p-4'>
-                  {editingReview === review.id ? (
-                    // Edit Form
-                    <div className='space-y-4'>
-                      <div className='flex items-center justify-between'>
-                        <span className='font-medium'>تعديل التقييم</span>
-                        <div className='flex gap-2'>
-                          <Button size='sm' onClick={handleUpdateReview}>
-                            حفظ
-                          </Button>
-                          <Button size='sm' variant='outline' onClick={cancelEdit}>
-                            إلغاء
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <label className='text-sm font-medium mb-2 block'>التقييم</label>
-                        <div className='flex gap-1'>
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <button
-                              key={star}
-                              type='button'
-                              onClick={() => handleEditRatingChange(star)}
-                              className='p-1'
-                            >
-                              <Star
-                                className={`h-6 w-6 ${
-                                  star <= editForm.rating
-                                    ? 'fill-yellow-400 text-yellow-400'
-                                    : 'text-gray-300'
-                                }`}
-                              />
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className='text-sm font-medium mb-2 block'>العنوان</label>
-                        <input
-                          type='text'
-                          value={editForm.title}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
-                          className='w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent'
-                        />
-                      </div>
-
-                      <div>
-                        <label className='text-sm font-medium mb-2 block'>التعليق</label>
-                        <Textarea
-                          value={editForm.comment}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, comment: e.target.value }))}
-                          rows={3}
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    // Display Review
-                    <>
+                  {/* Display Review */}
+                  <>
                       <div className='mb-3'>
                         <div className='flex items-center justify-between mb-2'>
                           <div className='flex items-center gap-2'>
@@ -435,23 +344,21 @@ export default function ReviewList({ productId }: ReviewListProps) {
                             </span>
                           </div>
                           
-                          {/* Edit/Delete buttons for user's own review */}
-                          {session?.user?.id === review.user.id && (
+                          {/* Delete button for user's own review */}
+                          {status === 'authenticated' && session?.user?.id === review.user.id && (
                             <div className='flex gap-2'>
                               <Button
                                 size='sm'
                                 variant='ghost'
-                                onClick={() => handleEditReview(review)}
-                              >
-                                <Edit className='h-4 w-4' />
-                              </Button>
-                              <Button
-                                size='sm'
-                                variant='ghost'
                                 onClick={() => handleDeleteReview(review.id)}
-                                className='text-red-600 hover:text-red-700'
+                                disabled={isDeleting}
+                                className='text-destructive hover:text-destructive'
                               >
-                                <Trash2 className='h-4 w-4' />
+                                {isDeleting ? (
+                                  <LoadingSpinner size="sm" />
+                                ) : (
+                                  <Trash2 className='h-4 w-4' />
+                                )}
                               </Button>
                             </div>
                           )}
@@ -466,8 +373,7 @@ export default function ReviewList({ productId }: ReviewListProps) {
                       <p className='text-xs text-muted-foreground'>
                         {new Date(review.createdAt).toLocaleDateString('ar-EG')}
                       </p>
-                    </>
-                  )}
+                  </>
                 </CardContent>
               </Card>
             ))}

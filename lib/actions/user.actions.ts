@@ -29,7 +29,7 @@ export async function registerUser(userSignUp: IUserSignUp) {
     })
 
     if (existingUser) {
-      return { success: false, error: 'An account with this phone number already exists. Please sign in instead.' }
+      return { success: false, error: 'يوجد حساب بهذا الرقم بالفعل. يرجى تسجيل الدخول بدلاً من ذلك.' }
     }
 
     await prisma.user.create({
@@ -40,18 +40,18 @@ export async function registerUser(userSignUp: IUserSignUp) {
         role: 'User',
       }
     })
-    return { success: true, message: 'User created successfully' }
+    return { success: true, message: 'تم إنشاء المستخدم بنجاح' }
   } catch (error) {
     // Handle specific validation errors
     if (error instanceof Error) {
       if (error.message.includes('validation')) {
-        return { success: false, error: 'Please check your input and ensure all fields are filled correctly.' }
+        return { success: false, error: 'يرجى التحقق من المدخلات والتأكد من ملء جميع الحقول بشكل صحيح.' }
       }
       if (error.message.includes('unique constraint')) {
-        return { success: false, error: 'An account with this phone number already exists. Please sign in instead.' }
+        return { success: false, error: 'يوجد حساب بهذا الرقم بالفعل. يرجى تسجيل الدخول بدلاً من ذلك.' }
       }
       if (error.message.includes('database')) {
-        return { success: false, error: 'Database connection error. Please try again later.' }
+        return { success: false, error: 'خطأ في الاتصال بقاعدة البيانات. يرجى المحاولة مرة أخرى لاحقاً.' }
       }
     }
     
@@ -70,7 +70,7 @@ export async function deleteUser(id: string) {
     revalidatePath('/admin/users')
     return {
       success: true,
-      message: 'User deleted successfully',
+      message: 'تم حذف المستخدم بنجاح',
     }
   } catch (error) {
     return { success: false, message: formatError(error) }
