@@ -1,42 +1,11 @@
 import { PrismaClient } from '@prisma/client'
-import { withAccelerate } from '@prisma/extension-accelerate'
-
-// Use DATABASE_URL (Accelerate endpoint) at runtime
-const accelerateUrl = process.env.DATABASE_URL
-
-// Create a factory so we can infer the extended type
-const createPrisma = () =>
-  new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
-    datasources: { db: { url: accelerateUrl } },
-  }).$extends(withAccelerate())
-
-type PrismaAcceleratedClient = ReturnType<typeof createPrisma>
 
 declare global {
+  // Using var here is required for global declarations
   // eslint-disable-next-line no-var
-  var __prisma__: PrismaAcceleratedClient | undefined
+  var prisma: PrismaClient | undefined
 }
 
-const prismaClient: PrismaAcceleratedClient = global.__prisma__ ?? createPrisma()
+export const prisma = globalThis.prisma || new PrismaClient()
 
-if (process.env.NODE_ENV !== 'production') {
-  global.__prisma__ = prismaClient
-}
-
-export const prisma = prismaClient
-
-// Add graceful shutdown
-process.on('beforeExit', async () => {
-  await prismaClient.$disconnect()
-})
-
-process.on('SIGINT', async () => {
-  await prismaClient.$disconnect()
-  process.exit(0)
-})
-
-process.on('SIGTERM', async () => {
-  await prismaClient.$disconnect()
-  process.exit(0)
-})
+if (process.env.NODE_ENV !== 'production') globalThis.prisma = prisma

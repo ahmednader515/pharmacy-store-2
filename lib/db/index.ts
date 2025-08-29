@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma'
 
-// Re-export unified prisma client to avoid duplicate instances
+// Re-export unified prisma client
 export { prisma }
 
 // Utility function to fetch products for multiple categories efficiently

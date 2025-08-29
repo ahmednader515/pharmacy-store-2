@@ -1,9 +1,19 @@
 import { NextResponse } from 'next/server'
-import { checkDatabaseHealth } from '@/lib/db/connection-manager'
+import { prisma } from '@/lib/prisma'
 
 export async function GET() {
   try {
-    const health = await checkDatabaseHealth()
+    // Simple database health check using Prisma
+    const startTime = Date.now()
+    await prisma.$queryRaw`SELECT 1`
+    const responseTime = Date.now() - startTime
+    
+    const health = {
+      status: responseTime < 100 ? 'healthy' : 
+                responseTime < 1000 ? 'degraded' : 'unhealthy',
+      message: `Database responding (${responseTime}ms)`,
+      responseTime
+    }
     
     return NextResponse.json({
       timestamp: new Date().toISOString(),

@@ -7,7 +7,6 @@ import { formatError } from '../utils'
 import { ProductInputSchema, ProductUpdateSchema } from '../validator'
 import { IProductInput } from '@/types'
 import { z } from 'zod'
-import { withConnectionMonitoring } from '@/lib/db/connection-manager'
 
 // Cache for categories to avoid repeated database calls
 let categoriesCache: string[] | null = null
@@ -799,30 +798,27 @@ export async function getProductsByCategory(category: string) {
     const cached = getCachedData(cacheKey)
     if (cached) return cached
 
-    // Use connection monitoring wrapper
-    const products = await withConnectionMonitoring(
-      () => prisma.product.findMany({
-        where: {
-          category: category,
-          isPublished: true,
-        },
-        orderBy: [
-          { numSales: 'desc' },
-          { avgRating: 'desc' }
-        ],
-        take: 8,
-        select: {
-          name: true,
-          slug: true,
-          images: true,
-          price: true,
-          listPrice: true,
-          avgRating: true,
-          numReviews: true,
-        }
-      }),
-      `getProductsByCategory_${category}`
-    )
+    // Simple database call without connection monitoring
+    const products = await prisma.product.findMany({
+      where: {
+        category: category,
+        isPublished: true,
+      },
+      orderBy: [
+        { numSales: 'desc' },
+        { avgRating: 'desc' }
+      ],
+      take: 8,
+      select: {
+        name: true,
+        slug: true,
+        images: true,
+        price: true,
+        listPrice: true,
+        avgRating: true,
+        numReviews: true,
+      }
+    })
     
     const result = products.map((product: any) => ({
       name: product.name,
@@ -854,30 +850,27 @@ export async function getProductsForMultipleCategories(categories: string[]) {
     const cached = getCachedData(cacheKey)
     if (cached) return cached
 
-    // Use connection monitoring wrapper
-    const allProducts = await withConnectionMonitoring(
-      () => prisma.product.findMany({
-        where: {
-          category: { in: categories },
-          isPublished: true,
-        },
-        orderBy: [
-          { numSales: 'desc' },
-          { avgRating: 'desc' }
-        ],
-        select: {
-          name: true,
-          slug: true,
-          images: true,
-          price: true,
-          listPrice: true,
-          avgRating: true,
-          numReviews: true,
-          category: true,
-        }
-      }),
-      'getProductsForMultipleCategories'
-    )
+    // Simple database call without connection monitoring
+    const allProducts = await prisma.product.findMany({
+      where: {
+        category: { in: categories },
+        isPublished: true,
+      },
+      orderBy: [
+        { numSales: 'desc' },
+        { avgRating: 'desc' }
+      ],
+      select: {
+        name: true,
+        slug: true,
+        images: true,
+        price: true,
+        listPrice: true,
+        avgRating: true,
+        numReviews: true,
+        category: true,
+      }
+    })
 
     // Group products by category
     const productsByCategory = categories.reduce((acc, category) => {
