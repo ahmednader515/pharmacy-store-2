@@ -43,7 +43,7 @@ export default async function AdminUser(props: {
           <TableHeader>
             <TableRow className="bg-gray-100 border-b-2 border-gray-300">
               <TableHead className='text-right bg-gray-100 text-gray-800 font-semibold py-4 px-4'>الاسم</TableHead>
-              <TableHead className='text-right bg-gray-100 text-gray-800 font-semibold py-4 px-4'>البريد الإلكتروني</TableHead>
+              <TableHead className='text-right bg-gray-100 text-gray-800 font-semibold py-4 px-4'>رقم الهاتف</TableHead>
               <TableHead className='text-right bg-gray-100 text-gray-800 font-semibold py-4 px-4'>الدور</TableHead>
               <TableHead className='text-right bg-gray-100 text-gray-800 font-semibold py-4 px-4'>تاريخ التسجيل</TableHead>
               <TableHead className='text-right bg-gray-100 text-gray-800 font-semibold py-4 px-4'>الإجراءات</TableHead>
@@ -61,7 +61,7 @@ export default async function AdminUser(props: {
                   </div>
                 </TableCell>
                 <TableCell className='py-4 px-4'>
-                  {user.email}
+                  {user.phone || 'غير متوفر'}
                 </TableCell>
                 <TableCell className='py-4 px-4'>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${

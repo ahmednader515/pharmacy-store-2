@@ -39,7 +39,7 @@ const UserEditForm = ({ user }: { user: IUserInput & { id: string } }) => {
     defaultValues: {
       _id: user.id,
       name: user.name,
-      email: user.email,
+      phone: user.phone,
       role: user.role,
     },
   })
@@ -104,12 +104,12 @@ const UserEditForm = ({ user }: { user: IUserInput & { id: string } }) => {
           />
           <FormField
             control={form.control}
-            name='email'
+            name='phone'
             render={({ field }) => (
               <FormItem className='w-full'>
-                <FormLabel>Email</FormLabel>
+                <FormLabel>Phone</FormLabel>
                 <FormControl>
-                  <Input placeholder='Enter user email' {...field} />
+                  <Input placeholder='Enter user phone' {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

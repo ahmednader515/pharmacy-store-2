@@ -1,6 +1,6 @@
 import { Data, IProductInput, IUserInput } from '@/types'
 import { toSlug } from './utils'
-import bcrypt from 'bcryptjs'
+import * as bcrypt from 'bcryptjs'
 
 const users: IUserInput[] = [
   {

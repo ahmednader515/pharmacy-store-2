@@ -52,6 +52,15 @@ export type Data = {
     paidAt?: Date
     isDelivered: boolean
     deliveredAt?: Date
+    shippingAddress?: {
+      street: string
+      province: string
+      area: string
+      apartment: string
+      building: string
+      floor: string
+      landmark: string
+    }
     orderItems: {
       productId: string
       name: string

@@ -114,7 +114,7 @@ export const OrderInputSchema = z.object({
     .object({
       id: z.string(),
       status: z.string(),
-      email_address: z.string(),
+      phone: z.string().optional(),
       pricePaid: z.string(),
     })
     .optional(),

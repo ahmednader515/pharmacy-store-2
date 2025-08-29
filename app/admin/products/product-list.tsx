@@ -16,6 +16,8 @@ import {
 import { Input } from '@/components/ui/input'
 import { formatDateTime } from '@/lib/utils'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { deleteProduct } from '@/lib/actions/product.actions'
+import { useToast } from '@/hooks/use-toast'
 
 type Product = {
   id: string
@@ -99,6 +101,7 @@ const ProductList = ({ initialProducts, totalProducts }: ProductListProps) => {
   const [page, setPage] = useState<number>(1)
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [products, setProducts] = useState<Product[]>(initialProducts)
+  const { toast } = useToast()
   
   // Client-side search and filtering
   const filteredProducts = useMemo(() => {
@@ -124,6 +127,50 @@ const ProductList = ({ initialProducts, totalProducts }: ProductListProps) => {
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value)
     setPage(1) // Reset to first page when searching
+  }
+
+  // Client-side delete function that calls the API route
+  const deleteProductClient = async (id: string) => {
+    try {
+      // Optimistic update
+      setProducts(prev => prev.filter(p => p.id !== id))
+      
+      // Call the API route
+      const response = await fetch(`/api/products/${id}`, {
+        method: 'DELETE',
+      })
+      
+      const result = await response.json()
+      
+      if (result.success) {
+        // Show success message
+        toast({
+          title: 'تم حذف المنتج بنجاح',
+          description: result.message,
+        })
+        // Product is already removed from state
+        return { success: true, message: result.message }
+      } else {
+        // Revert optimistic update on failure
+        window.location.reload()
+        toast({
+          title: 'خطأ في حذف المنتج',
+          description: result.message || 'حدث خطأ غير متوقع',
+          variant: 'destructive',
+        })
+        return { success: false, message: result.message || 'حدث خطأ غير متوقع' }
+      }
+    } catch (error) {
+      console.error('Error deleting product:', error)
+      // Revert optimistic update on error
+      window.location.reload()
+      toast({
+        title: 'خطأ في حذف المنتج',
+        description: 'حدث خطأ غير متوقع أثناء الحذف',
+        variant: 'destructive',
+      })
+      return { success: false, message: 'حدث خطأ أثناء الحذف' }
+    }
   }
 
   return (
@@ -234,11 +281,7 @@ const ProductList = ({ initialProducts, totalProducts }: ProductListProps) => {
                         </Button>
                         <DeleteDialog
                           id={product.id}
-                          action={async (id: string) => {
-                            // Client-side delete - remove from state
-                            setProducts(prev => prev.filter(p => p.id !== id))
-                            return { success: true, message: 'تم حذف المنتج بنجاح' }
-                          }}
+                          action={deleteProductClient}
                         />
                       </div>
                     </TableCell>
@@ -332,11 +375,7 @@ const ProductList = ({ initialProducts, totalProducts }: ProductListProps) => {
                   </Button>
                   <DeleteDialog
                     id={product.id}
-                    action={async (id: string) => {
-                      // Client-side delete - remove from state
-                      setProducts(prev => prev.filter(p => p.id !== id))
-                      return { success: true, message: 'تم حذف المنتج بنجاح' }
-                    }}
+                    action={deleteProductClient}
                   />
                 </div>
               </div>

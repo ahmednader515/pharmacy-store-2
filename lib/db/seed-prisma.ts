@@ -1,7 +1,12 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@prisma/client/edge'
+import { withAccelerate } from '@prisma/extension-accelerate'
+import { loadEnvFromFile } from '../env-loader'
 import data from '../data'
 
-const prisma = new PrismaClient()
+// Load environment variables from .env file
+loadEnvFromFile()
+
+const prisma = new PrismaClient().$extends(withAccelerate())
 
 async function main() {
   console.log('🌱 Starting Prisma seed...')
