@@ -117,7 +117,7 @@ export default function SearchFilters({ categories, tags, maxPrice }: SearchFilt
   ]
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border-0 p-4 sm:p-6" dir="rtl">
+    <div className="bg-white rounded-xl shadow-sm border-0 p-4 sm:p-6 lg:sticky lg:top-6" dir="rtl">
       {/* Header */}
       <div className="flex items-center justify-between mb-4 sm:mb-6">
         <div className="flex items-center gap-2 sm:gap-3">
@@ -128,13 +128,14 @@ export default function SearchFilters({ categories, tags, maxPrice }: SearchFilt
           variant="ghost"
           size="sm"
           onClick={() => setIsOpen(!isOpen)}
-          className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg"
+          className="p-1.5 sm:p-2 rounded-lg lg:hidden"
         >
           {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
       </div>
 
-      {isOpen && (
+      {/* Always show filters on desktop, toggle on mobile */}
+      <div className={isOpen ? 'block' : 'hidden lg:block'}>
         <>
           {/* Active Filters */}
           {activeFilters.length > 0 && (
@@ -162,7 +163,7 @@ export default function SearchFilters({ categories, tags, maxPrice }: SearchFilt
                       variant="ghost"
                       size="sm"
                       onClick={() => removeFilter(filter.key, filter.value)}
-                      className="h-3 w-3 sm:h-4 sm:w-4 p-0 hover:bg-transparent hover:text-blue-900"
+                      className="h-3 w-3 sm:h-4 sm:w-4 p-0"
                     >
                       <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                     </Button>
@@ -273,7 +274,7 @@ export default function SearchFilters({ categories, tags, maxPrice }: SearchFilt
             </div>
           </div>
         </>
-      )}
+      </div>
     </div>
   )
 }

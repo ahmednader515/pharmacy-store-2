@@ -31,7 +31,7 @@ function SearchHeaderSkeleton() {
 
 function ProductGridSkeleton() {
   return (
-    <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8'>
+    <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8'>
       {Array.from({ length: 8 }).map((_, i) => (
         <Card key={i} className='overflow-hidden'>
           <CardContent className='p-3 sm:p-4'>
@@ -142,18 +142,17 @@ async function ProductResults({ params, translations }: {
   }
 
   // Direct database queries
-  const [products, totalProducts] = await Promise.all([
-    prisma.product.findMany({
-      where,
-      orderBy,
-      skip,
-      take: limit,
-    }),
-    prisma.product.count({ where })
-  ])
+  const products = await (prisma as any).product.findMany({
+    where,
+    orderBy,
+    skip,
+    take: limit,
+  })
+  
+  const totalProducts = await (prisma as any).product.count({ where })
 
   // Convert Decimal values to numbers for client components
-  const normalizedProducts = products.map(product => ({
+  const normalizedProducts = products.map((product: any) => ({
     ...product,
     price: Number(product.price),
     listPrice: Number(product.listPrice),
@@ -193,9 +192,9 @@ async function ProductResults({ params, translations }: {
         </div>
       ) : (
         <>
-          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8'>
-            {normalizedProducts.map((product) => (
-              <ProductCard key={product.id} product={product as any} />
+          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8'>
+            {normalizedProducts.map((product: any) => (
+              <ProductCard key={product.id} product={product} />
             ))}
           </div>
 
@@ -239,14 +238,14 @@ async function ProductResults({ params, translations }: {
 
 async function SearchFiltersSection({ params }: { params: any }) {
   // Direct database query for categories
-  const categories = await prisma.product.findMany({
+  const categories = await (prisma as any).product.findMany({
     where: { isPublished: true },
     select: { category: true },
     distinct: ['category'],
     orderBy: { category: 'asc' }
   })
   
-  const categoryList = categories.map(c => c.category)
+  const categoryList = categories.map((c: any) => c.category)
   const tags = ['best-seller', 'featured', 'new-arrival', 'todays-deal', 'pain-relief', 'vitamins', 'allergy', 'digestive', 'cold-flu']
 
   return (
@@ -300,18 +299,38 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         <SearchHeader params={params} translations={translations} />
       </Suspense>
 
-      {/* Filters Section - Load second, positioned at top */}
-      <div className='mb-6 sm:mb-8'>
-        <Suspense fallback={<FiltersSkeleton />}>
-          <SearchFiltersSection params={params} />
-        </Suspense>
+      {/* Desktop Layout: Side-by-side filters and products */}
+      <div className='hidden lg:flex gap-6'>
+        {/* Left Sidebar - Filters */}
+        <div className='w-80 flex-shrink-0'>
+          <Suspense fallback={<FiltersSkeleton />}>
+            <SearchFiltersSection params={params} />
+          </Suspense>
+        </div>
+
+        {/* Right Side - Main Content */}
+        <div className='flex-1 min-w-0'>
+          <Suspense fallback={<ProductGridSkeleton />}>
+            <ProductResults params={params} translations={translations} />
+          </Suspense>
+        </div>
       </div>
 
-      {/* Main Content - Load third, full width */}
-      <div className='w-full'>
-        <Suspense fallback={<ProductGridSkeleton />}>
-          <ProductResults params={params} translations={translations} />
-        </Suspense>
+      {/* Mobile Layout: Filters on top, products below */}
+      <div className='lg:hidden'>
+        {/* Filters Section - Load second, positioned at top */}
+        <div className='mb-6 sm:mb-8'>
+          <Suspense fallback={<FiltersSkeleton />}>
+            <SearchFiltersSection params={params} />
+          </Suspense>
+        </div>
+
+        {/* Main Content - Load third, full width */}
+        <div className='w-full'>
+          <Suspense fallback={<ProductGridSkeleton />}>
+            <ProductResults params={params} translations={translations} />
+          </Suspense>
+        </div>
       </div>
     </div>
   )
