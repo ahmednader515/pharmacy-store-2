@@ -42,7 +42,7 @@ export default async function AdminLayout({
             {/* Logo on the right */}
             <Link href='/' className='flex items-center'>
               <Image
-                src='/icons/logo.svg'
+                src='/icons/logo.png'
                 width={48}
                 height={48}
                 alt={`${site.name} logo`}

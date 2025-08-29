@@ -37,7 +37,7 @@ export default async function SignInPage(props: {
           <div className="flex flex-col items-center justify-center space-y-6 md:space-y-8 lg:space-y-10 text-center logo-section order-2 lg:order-1">
             <div className="w-32 h-32 md:w-48 md:h-48 lg:w-64 lg:h-64 relative">
               <Image
-                src="/icons/logo.svg"
+                src="/icons/logo.png"
                 alt="شعار المتجر"
                 fill
                 className="object-contain"

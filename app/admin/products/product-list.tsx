@@ -216,7 +216,7 @@ const ProductList = () => {
                   const safeProduct = {
                     id: product.id || '',
                     name: product.name || 'Unnamed Product',
-                    price: typeof product.price === 'number' ? product.price : 0,
+                    price: typeof product.price === 'number' ? product.price : Number((product as any).price ?? 0),
                     category: product.category || 'No Category',
                     countInStock: typeof product.countInStock === 'number' ? product.countInStock : 0,
                     avgRating: typeof product.avgRating === 'number' ? product.avgRating : 0,
@@ -245,7 +245,7 @@ const ProductList = () => {
                         </Link>
                       </TableCell>
                       <TableCell className='text-right py-4 px-4 font-semibold text-green-700'>
-                        ${safeProduct.price.toFixed(2)}
+                        {safeProduct.price.toFixed(2)} ج.م
                       </TableCell>
                       <TableCell className='text-right py-4 px-4'>
                         {safeProduct.category}
@@ -348,7 +348,7 @@ const ProductList = () => {
               const safeProduct = {
                 id: product.id || '',
                 name: product.name || 'Unnamed Product',
-                price: typeof product.price === 'number' ? product.price : 0,
+                price: typeof product.price === 'number' ? product.price : Number((product as any).price ?? 0),
                 category: product.category || 'No Category',
                 countInStock: typeof product.countInStock === 'number' ? product.countInStock : 0,
                 avgRating: typeof product.avgRating === 'number' ? product.avgRating : 0,
@@ -383,7 +383,7 @@ const ProductList = () => {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">السعر:</span>
-                      <span className="font-semibold text-green-700">${safeProduct.price.toFixed(2)}</span>
+                      <span className="font-semibold text-green-700">{safeProduct.price.toFixed(2)} ج.م</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">المخزون:</span>

@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from '@/hooks/use-toast'
 import { Plus, Trash2, Save, Image as ImageIcon, Upload, Truck, Calculator, DollarSign } from 'lucide-react'
 import data from '@/lib/data'
+import { updateSetting } from '@/lib/actions/setting.actions'
 
 interface CarouselItem {
   title: string
@@ -27,7 +28,7 @@ interface SeasonalDiscount {
   applicableCategories: string[]
 }
 
-export default function SettingsForm() {
+export default function SettingsForm({ setting }: { setting: any }) {
   const [carouselItems, setCarouselItems] = useState<CarouselItem[]>([])
   const [deliverySettings, setDeliverySettings] = useState({
     deliveryTimeHours: 4,
@@ -64,17 +65,14 @@ export default function SettingsForm() {
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
-    // Load current settings from data
-    const settings = data.settings[0]
+    const settings = setting || data.settings[0]
     if (settings) {
       setCarouselItems(settings.carousels || [])
       if (settings.deliverySettings) {
-        // Handle both old and new delivery settings format
         const delivery = settings.deliverySettings
         if ('deliveryTimeHours' in delivery) {
           setDeliverySettings(delivery)
         } else {
-          // Convert old format to new format
           setDeliverySettings({
             deliveryTimeHours: 4,
             deliveryPrice: delivery.standardDeliveryPrice || 4.99,
@@ -89,7 +87,7 @@ export default function SettingsForm() {
         setProductPricing(settings.productPricing)
       }
     }
-  }, [])
+  }, [setting])
 
   const handleCarouselChange = (index: number, field: keyof CarouselItem, value: string) => {
     const newCarouselItems = [...carouselItems]
@@ -189,16 +187,28 @@ export default function SettingsForm() {
     setIsLoading(true)
     
     try {
-      // Here you would typically save to your database
-      // For now, we'll just show a success message
-      toast({
-        title: 'تم حفظ الإعدادات',
-        description: 'تم تحديث إعدادات الموقع بنجاح',
-        variant: 'default'
-      })
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      const newSetting = {
+        ...data.settings[0],
+        carousels: carouselItems,
+        deliverySettings,
+        taxSettings,
+        productPricing,
+      } as any
+
+      const res = await updateSetting(newSetting)
+      if (!res.success) {
+        toast({
+          title: 'خطأ في الحفظ',
+          description: res.message,
+          variant: 'destructive'
+        })
+      } else {
+        toast({
+          title: 'تم حفظ الإعدادات',
+          description: 'تم تحديث إعدادات الموقع بنجاح',
+          variant: 'default'
+        })
+      }
       
     } catch (error) {
       toast({

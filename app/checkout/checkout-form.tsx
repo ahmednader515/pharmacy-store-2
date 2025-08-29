@@ -22,7 +22,7 @@ import { ShippingAddressSchema } from '@/lib/validator'
 import { zodResolver } from '@hookform/resolvers/zod'
 
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
 import CheckoutFooter from './checkout-footer'
 import { ShippingAddress } from '@/types'
@@ -63,6 +63,14 @@ export default function CheckoutForm() {
     cleanupInvalidItems,
     regenerateClientIds,
   } = useCartStore()
+
+  // Ensure the cart store actually has a payment method set to match the initially selected radio
+  useEffect(() => {
+    const current = useCartStore.getState().cart.paymentMethod
+    if (!current) {
+      setPaymentMethod(defaultPaymentMethod)
+    }
+  }, [setPaymentMethod, defaultPaymentMethod])
 
 
   const shippingAddressForm = useForm<ShippingAddress>({

@@ -60,15 +60,16 @@ export default function ProductSlider({
         }}
         className='w-full'
         setApi={setApi}
+        dir='rtl'
       >
-        <CarouselContent className="rtl">
+        <CarouselContent>
           {products.map((product, index) => (
             <CarouselItem
               key={product.slug}
               className={
                 hideDetails
-                  ? 'pl-4 basis-full sm:basis-1/3 md:basis-1/4 lg:basis-1/5 xl:basis-1/6'
-                  : 'pl-4 basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5'
+                  ? 'basis-full sm:basis-1/3 md:basis-1/4 lg:basis-1/5 xl:basis-1/6'
+                  : 'basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5'
               }
             >
               <ProductCard

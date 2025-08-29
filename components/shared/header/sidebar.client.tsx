@@ -98,9 +98,9 @@ export default function SidebarClient({
             </nav>
           </div>
 
-          {/* Sign Out Button - Bottom */}
+          {/* Sign Out Button - Bottom (sticky for mobile visibility) */}
           {session && (
-            <div className="p-4 border-t border-blue-500">
+            <div className="p-4 border-t border-blue-500 sticky bottom-0 bg-blue-600">
               <Button
                 className="w-full bg-white text-blue-600 hover:bg-gray-100 font-medium"
                 onClick={handleSignOut}

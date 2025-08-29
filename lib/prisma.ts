@@ -9,7 +9,6 @@ const createPrisma = () =>
   new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
     datasources: { db: { url: accelerateUrl } },
-
   }).$extends(withAccelerate())
 
 type PrismaAcceleratedClient = ReturnType<typeof createPrisma>
@@ -26,3 +25,18 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 export const prisma = prismaClient
+
+// Add graceful shutdown
+process.on('beforeExit', async () => {
+  await prismaClient.$disconnect()
+})
+
+process.on('SIGINT', async () => {
+  await prismaClient.$disconnect()
+  process.exit(0)
+})
+
+process.on('SIGTERM', async () => {
+  await prismaClient.$disconnect()
+  process.exit(0)
+})

@@ -19,7 +19,7 @@
      'An Amazon clone built with Next.js and MongoDB'
    ```
 
-3. create logo.svg and save in /public/icons folder
+3. create logo.png and save in /public/icons folder
 4. app/globals.css
 
    ```css
@@ -176,7 +176,7 @@
                  className='flex items-center header-button font-extrabold text-2xl m-1 '
                >
                  <Image
-                   src='/icons/logo.svg'
+                   src='/icons/logo.png'
                    width={40}
                    height={40}
                    alt={`${APP_NAME} logo`}

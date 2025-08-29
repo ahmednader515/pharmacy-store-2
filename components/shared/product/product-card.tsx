@@ -88,11 +88,11 @@ const ProductCard = ({
         <div className="flex items-center gap-1 sm:gap-2">
           <span className="text-xs text-gray-500">التقييم:</span>
           <div className="bg-yellow-100 text-yellow-800 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-semibold">
-            {product.avgRating.toFixed(1)}
+            {product.avgRating && !isNaN(product.avgRating) ? product.avgRating.toFixed(1) : '0.0'}
           </div>
         </div>
         <span className="text-xs text-gray-500 text-left">
-          ({formatNumber(product.numReviews)} تقييم)
+          ({product.numReviews && !isNaN(product.numReviews) ? formatNumber(product.numReviews) : '0'} تقييم)
         </span>
       </div>
 

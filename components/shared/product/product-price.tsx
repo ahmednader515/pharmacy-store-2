@@ -21,7 +21,7 @@ export default function ProductPrice({
   const formatPrice = (price: number) => {
     // Ensure price is a valid number
     const numericPrice = Number(price)
-    if (isNaN(numericPrice)) {
+    if (isNaN(numericPrice) || numericPrice <= 0) {
       return '0.00 ج.م'
     }
     
@@ -37,10 +37,15 @@ export default function ProductPrice({
     }).format(numericPrice)
   }
 
-  const hasDiscount = originalPrice && Number(originalPrice) > Number(price)
+  const hasDiscount = Number(originalPrice) > 0 && Number(price) > 0 && Number(originalPrice) > Number(price)
 
   if (plain) {
     return <span>{formatPrice(price)}</span>
+  }
+
+  // Don't render anything if price is 0 or invalid
+  if (!price || Number(price) <= 0) {
+    return null
   }
 
   return (

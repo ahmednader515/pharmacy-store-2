@@ -2,7 +2,7 @@
 
 import { Cart, OrderItem, ShippingAddress } from '@/types'
 import { formatError, round2 } from '../utils'
-import { connectToDatabase } from '../db'
+import { prisma } from '@/lib/prisma'
 import { auth } from '@/auth'
 import { OrderInputSchema } from '../validator'
 import { revalidatePath } from 'next/cache'
@@ -14,7 +14,6 @@ import data from '../data'
 // CREATE
 export const createOrder = async (clientSideCart: Cart) => {
   try {
-    const connection = await connectToDatabase()
     const session = await auth()
     
     console.log('🔍 Order creation debug:')
@@ -44,8 +43,8 @@ export const createOrder = async (clientSideCart: Cart) => {
     }
     
     // Verify user exists in database
-    if (connection.prisma && session.user.id) {
-      const dbUser = await connection.prisma.user.findUnique({
+    if (session.user.id) {
+      const dbUser = await prisma.user.findUnique({
         where: { id: session.user.id }
       })
       console.log('Database user found:', dbUser)
@@ -78,13 +77,7 @@ export const createOrderFromCart = async (
     throw new Error('Invalid cart data')
   }
   
-  const connection = await connectToDatabase()
-  
   // Mock mode removed: always use database
-  
-  if (!connection.prisma) {
-    throw new Error('Database connection failed')
-  }
   
   const cart = {
     ...clientSideCart,
@@ -107,7 +100,7 @@ export const createOrderFromCart = async (
     expectedDeliveryDate: cart.expectedDeliveryDate,
   })
   
-  return await connection.prisma.order.create({
+      return await prisma.order.create({
     data: {
       userId: orderData.user as string,
       expectedDeliveryDate: orderData.expectedDeliveryDate,
@@ -158,15 +151,9 @@ export const createOrderFromCart = async (
 
 export async function updateOrderToPaid(orderId: string) {
   try {
-    const connection = await connectToDatabase()
-    
     // Mock mode removed: always use database
     
-    if (!connection.prisma) {
-      return { success: false, message: 'فشل الاتصال بقاعدة البيانات' }
-    }
-    
-    const order = await connection.prisma.order.findUnique({
+    const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: {
         user: {
@@ -177,7 +164,7 @@ export async function updateOrderToPaid(orderId: string) {
     if (!order) throw new Error('Order not found')
     if (order.isPaid) throw new Error('Order is already paid')
     
-    await connection.prisma.order.update({
+    await prisma.order.update({
       where: { id: orderId },
       data: {
         isPaid: true,
@@ -195,22 +182,16 @@ export async function updateOrderToPaid(orderId: string) {
 }
 const updateProductStock = async (orderId: string) => {
   try {
-    const connection = await connectToDatabase()
-    
     // Mock mode removed: always use database
     
-    if (!connection.prisma) {
-      throw new Error('Database connection failed')
-    }
-    
-    const order = await connection.prisma.order.findUnique({
+    const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: { orderItems: true }
     })
     if (!order) throw new Error('Order not found')
 
     for (const item of order.orderItems) {
-      await connection.prisma.product.update({
+      await prisma.product.update({
         where: { id: item.productId },
         data: {
           countInStock: {
@@ -226,15 +207,9 @@ const updateProductStock = async (orderId: string) => {
 }
 export async function deliverOrder(orderId: string) {
   try {
-    const connection = await connectToDatabase()
-    
     // Mock mode removed: always use database
     
-    if (!connection.prisma) {
-      return { success: false, message: 'فشل الاتصال بقاعدة البيانات' }
-    }
-    
-    const order = await connection.prisma.order.findUnique({
+    const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: {
         user: {
@@ -245,7 +220,7 @@ export async function deliverOrder(orderId: string) {
     if (!order) throw new Error('Order not found')
     if (!order.isPaid) throw new Error('Order is not paid')
     
-    await connection.prisma.order.update({
+    await prisma.order.update({
       where: { id: orderId },
       data: {
         isDelivered: true,
@@ -264,14 +239,8 @@ export async function deliverOrder(orderId: string) {
 // DELETE
 export async function deleteOrder(id: string) {
   try {
-    const connection = await connectToDatabase()
     
-    
-    if (!connection.prisma) {
-      return { success: false, message: 'فشل الاتصال بقاعدة البيانات' }
-    }
-    
-    const res = await connection.prisma.order.delete({
+    const res = await prisma.order.delete({
       where: { id }
     })
     if (!res) throw new Error('Order not found')
@@ -298,20 +267,11 @@ export async function getAllOrders({
     common: { pageSize },
   } = data.settings[0];
   limit = limit || pageSize
-  const connection = await connectToDatabase()
   
   // Mock mode removed: always use database
   
-  if (!connection.prisma) {
-    console.warn('Database connection failed in getAllOrders')
-    return {
-      data: [],
-      totalPages: 1,
-    }
-  }
-  
   const skipAmount = (Number(page) - 1) * limit
-  const orders = await connection.prisma.order.findMany({
+  const orders = await prisma.order.findMany({
     include: {
       user: {
         select: { name: true }
@@ -323,7 +283,7 @@ export async function getAllOrders({
     skip: skipAmount,
     take: limit,
   })
-  const ordersCount = await connection.prisma.order.count()
+  const ordersCount = await prisma.order.count()
   return {
     data: JSON.parse(JSON.stringify(orders)),
     totalPages: Math.ceil(ordersCount / limit),
@@ -340,7 +300,6 @@ export async function getMyOrders({
     common: { pageSize },
   } = data.settings[0];
   limit = limit || pageSize
-  const connection = await connectToDatabase()
   const session = await auth()
   if (!session) {
     throw new Error('User is not authenticated')
@@ -348,16 +307,8 @@ export async function getMyOrders({
   
   // Mock mode removed: always use database
   
-  if (!connection.prisma) {
-    console.warn('Database connection failed in getMyOrders')
-    return {
-      data: [],
-      totalPages: 1,
-    }
-  }
-  
   const skipAmount = (Number(page) - 1) * limit
-  const orders = await connection.prisma.order.findMany({
+  const orders = await prisma.order.findMany({
     where: {
       userId: session?.user?.id,
     },
@@ -367,7 +318,7 @@ export async function getMyOrders({
     skip: skipAmount,
     take: limit,
   })
-  const ordersCount = await connection.prisma.order.count({
+  const ordersCount = await prisma.order.count({
     where: { userId: session?.user?.id }
   })
 
@@ -377,16 +328,9 @@ export async function getMyOrders({
   }
 }
 export async function getOrderById(orderId: string) {
-  const connection = await connectToDatabase()
-  
   // Mock mode removed: always use database
   
-  if (!connection.prisma) {
-    console.warn('Database connection failed in getOrderById')
-    return null
-  }
-  
-  const order = await connection.prisma.order.findUnique({
+  const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: {
       shippingAddress: true,
@@ -471,9 +415,8 @@ export async function getOrderSummary(date: DateRange) {
       throw new Error('Invalid date range provided')
     }
     
-    const connection = await connectToDatabase()
-
-    if (connection.isMock) {
+    // Check if we should use mock data (when prisma is not available)
+    if (!prisma) {
       console.log('📝 Mock mode: returning mock order summary data')
       // Return mock data for order summary
       return {
@@ -522,14 +465,14 @@ export async function getOrderSummary(date: DateRange) {
           },
         ],
       }
-    }
-
-    if (!connection.prisma) {
-      throw new Error('Database connection failed')
-    }
+    } else {
+      // Database mode - use real Prisma client
+      if (!prisma) {
+        throw new Error('Database connection failed')
+      }
 
   const [ordersCount, productsCount, usersCount] = await Promise.all([
-    connection.prisma.order.count({
+    prisma.order.count({
       where: {
         createdAt: {
           gte: date.from,
@@ -537,7 +480,7 @@ export async function getOrderSummary(date: DateRange) {
         },
       },
     }),
-    connection.prisma.product.count({
+    prisma.product.count({
       where: {
         createdAt: {
           gte: date.from,
@@ -545,7 +488,7 @@ export async function getOrderSummary(date: DateRange) {
         },
       },
     }),
-    connection.prisma.user.count({
+    prisma.user.count({
       where: {
         createdAt: {
           gte: date.from,
@@ -556,7 +499,7 @@ export async function getOrderSummary(date: DateRange) {
   ])
 
   // Calculate total sales
-  const totalSalesResult = await connection.prisma.order.aggregate({
+  const totalSalesResult = await prisma.order.aggregate({
     where: {
       createdAt: {
         gte: date.from,
@@ -577,7 +520,7 @@ export async function getOrderSummary(date: DateRange) {
     1
   )
   
-  const monthlySalesData = await connection.prisma.order.findMany({
+  const monthlySalesData = await prisma.order.findMany({
     where: {
       createdAt: {
         gte: sixMonthEarlierDate,
@@ -608,7 +551,7 @@ export async function getOrderSummary(date: DateRange) {
   } = data.settings[0];
   const limit = pageSize
   
-  const latestOrders = await connection.prisma.order.findMany({
+  const latestOrders = await prisma.order.findMany({
     include: {
       user: {
         select: { name: true }
@@ -631,6 +574,7 @@ export async function getOrderSummary(date: DateRange) {
     }
     
     return result
+    } // Close the else block
   } catch (error) {
     console.error('Error in getOrderSummary:', error)
     throw error
@@ -638,15 +582,9 @@ export async function getOrderSummary(date: DateRange) {
 }
 
 async function getSalesChartData(date: DateRange) {
-  const connection = await connectToDatabase()
-  
   // Mock mode removed: always use database
 
-  if (!connection.prisma) {
-    return []
-  }
-
-  const orders = await connection.prisma.order.findMany({
+  const orders = await prisma.order.findMany({
     where: {
       createdAt: {
         gte: date.from,
@@ -672,15 +610,9 @@ async function getSalesChartData(date: DateRange) {
 }
 
 async function getTopSalesProducts(date: DateRange) {
-  const connection = await connectToDatabase()
-  
   // Mock mode removed: always use database
 
-  if (!connection.prisma) {
-    return []
-  }
-
-  const orders = await connection.prisma.order.findMany({
+  const orders = await prisma.order.findMany({
     where: {
       createdAt: {
         gte: date.from,
@@ -725,15 +657,9 @@ async function getTopSalesProducts(date: DateRange) {
 }
 
 async function getTopSalesCategories(date: DateRange, limit = 5) {
-  const connection = await connectToDatabase()
-  
   // Mock mode removed: always use database
 
-  if (!connection.prisma) {
-    return []
-  }
-
-  const orders = await connection.prisma.order.findMany({
+  const orders = await prisma.order.findMany({
     where: {
       createdAt: {
         gte: date.from,

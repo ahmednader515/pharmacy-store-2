@@ -7,6 +7,7 @@ import { formatError } from '../utils'
 import { ProductInputSchema, ProductUpdateSchema } from '../validator'
 import { IProductInput } from '@/types'
 import { z } from 'zod'
+import { withConnectionMonitoring } from '@/lib/db/connection-manager'
 
 // Cache for categories to avoid repeated database calls
 let categoriesCache: string[] | null = null
@@ -214,8 +215,27 @@ export async function getAllProductsForAdmin({
       prisma.product.count({ where })
     ])
 
+    const normalizedProducts = products.map((p: any) => ({
+      ...p,
+      price: Number(p.price),
+      listPrice: Number(p.listPrice),
+    }))
+
+    // If no products in database, fall back to mock data
+    if (products.length === 0) {
+      console.log('📝 No products in database, using mock data')
+      const mockProducts = data.products.slice(skip, skip + limit)
+      return {
+        products: JSON.parse(JSON.stringify(mockProducts)),
+        totalPages: Math.ceil(data.products.length / pageSize),
+        totalProducts: data.products.length,
+        from: pageSize * (Number(page) - 1) + 1,
+        to: pageSize * (Number(page) - 1) + mockProducts.length,
+      }
+    }
+
     return {
-      products: JSON.parse(JSON.stringify(products)),
+      products: JSON.parse(JSON.stringify(normalizedProducts)),
       totalPages: Math.ceil(countProducts / pageSize),
       totalProducts: countProducts,
       from: pageSize * (Number(page) - 1) + 1,
@@ -489,8 +509,14 @@ export async function getAllProducts({
       prisma.product.count({ where })
     ])
 
+    const normalizedProducts = products.map((p: any) => ({
+      ...p,
+      price: Number(p.price),
+      listPrice: Number(p.listPrice),
+    }))
+
     return {
-      products: JSON.parse(JSON.stringify(products)),
+      products: JSON.parse(JSON.stringify(normalizedProducts)),
       totalPages: Math.ceil(countProducts / pageSize),
       totalProducts: countProducts,
       from: pageSize * (Number(page) - 1) + 1,
@@ -822,27 +848,30 @@ export async function getProductsByCategory(category: string) {
     const cached = getCachedData(cacheKey)
     if (cached) return cached
 
-    // Get products by category
-    const products = await prisma.product.findMany({
-      where: {
-        category: category,
-        isPublished: true,
-      },
-      orderBy: [
-        { numSales: 'desc' },
-        { avgRating: 'desc' }
-      ],
-      take: 8,
-      select: {
-        name: true,
-        slug: true,
-        images: true,
-        price: true,
-        listPrice: true,
-        avgRating: true,
-        numReviews: true,
-      }
-    })
+    // Use connection monitoring wrapper
+    const products = await withConnectionMonitoring(
+      () => prisma.product.findMany({
+        where: {
+          category: category,
+          isPublished: true,
+        },
+        orderBy: [
+          { numSales: 'desc' },
+          { avgRating: 'desc' }
+        ],
+        take: 8,
+        select: {
+          name: true,
+          slug: true,
+          images: true,
+          price: true,
+          listPrice: true,
+          avgRating: true,
+          numReviews: true,
+        }
+      }),
+      `getProductsByCategory_${category}`
+    )
     
     const result = products.map((product: any) => ({
       name: product.name,
@@ -861,6 +890,72 @@ export async function getProductsByCategory(category: string) {
     return result
   } catch (error) {
     console.error('Error fetching products by category:', error)
+    // Return empty array on error to prevent UI crashes
     return []
+  }
+}
+
+// New function to fetch products for multiple categories efficiently
+export async function getProductsForMultipleCategories(categories: string[]) {
+  try {
+    // Check cache first
+    const cacheKey = `productsForMultipleCategories_${categories.sort().join('_')}`
+    const cached = getCachedData(cacheKey)
+    if (cached) return cached
+
+    // Use connection monitoring wrapper
+    const allProducts = await withConnectionMonitoring(
+      () => prisma.product.findMany({
+        where: {
+          category: { in: categories },
+          isPublished: true,
+        },
+        orderBy: [
+          { numSales: 'desc' },
+          { avgRating: 'desc' }
+        ],
+        select: {
+          name: true,
+          slug: true,
+          images: true,
+          price: true,
+          listPrice: true,
+          avgRating: true,
+          numReviews: true,
+          category: true,
+        }
+      }),
+      'getProductsForMultipleCategories'
+    )
+
+    // Group products by category
+    const productsByCategory = categories.reduce((acc, category) => {
+      acc[category] = allProducts
+        .filter(product => product.category === category)
+        .slice(0, 8) // Limit to 8 products per category
+        .map(product => ({
+          name: product.name,
+          slug: product.slug,
+          image: Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : '',
+          images: Array.isArray(product.images) ? product.images : [],
+          price: Number(product.price),
+          listPrice: Number(product.listPrice),
+          avgRating: Number(product.avgRating),
+          numReviews: Number(product.numReviews),
+        }))
+      return acc
+    }, {} as Record<string, any[]>)
+
+    // Cache the result
+    setCachedData(cacheKey, productsByCategory)
+    
+    return productsByCategory
+  } catch (error) {
+    console.error('Error fetching products for multiple categories:', error)
+    // Return empty object with all categories to prevent UI crashes
+    return categories.reduce((acc, category) => {
+      acc[category] = []
+      return acc
+    }, {} as Record<string, any[]>)
   }
 }

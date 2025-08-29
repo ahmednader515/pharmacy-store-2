@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Suspense } from 'react'
 
-import { getCategories, getProductsByCategory } from '@/lib/actions/product.actions'
+import { getCategories, getProductsForMultipleCategories } from '@/lib/actions/product.actions'
 import data from '@/lib/data'
 
 export const runtime = 'nodejs'
@@ -89,32 +89,35 @@ async function CategoriesSection() {
 }
 
 async function CategoryProductsSection() {
-  const categories = await getCategories()
-  
-  // Fetch products for all categories in parallel
-  const categoryProductsPromises = categories.map(async (category: string) => {
-    const products = await getProductsByCategory(category)
-    return { category, products }
-  })
-  
-  const categoryProducts = await Promise.all(categoryProductsPromises)
-  
-  return (
-    <>
-      {categoryProducts.map(({ category, products }) => {
-        // Only show carousel if there are products in this category
-        if (products.length === 0) return null
-        
-        return (
-          <Card key={category} className='w-full rounded-xl shadow-sm'>
-            <CardContent className='card-mobile'>
-              <ProductSlider title={category} products={products} />
-            </CardContent>
-          </Card>
-        )
-      })}
-    </>
-  )
+  try {
+    const categories = await getCategories()
+    
+    // Use the efficient single-query function instead of multiple parallel calls
+    const productsByCategory = await getProductsForMultipleCategories(categories)
+    
+    return (
+      <>
+        {categories.map((category: string) => {
+          const products = productsByCategory[category] || []
+          
+          // Only show carousel if there are products in this category
+          if (products.length === 0) return null
+          
+          return (
+            <Card key={category} className='w-full rounded-xl shadow-sm'>
+              <CardContent className='card-mobile'>
+                <ProductSlider title={category} products={products} />
+              </CardContent>
+            </Card>
+          )
+        })}
+      </>
+    )
+  } catch (error) {
+    console.error('Error loading category products:', error)
+    // Fallback to skeleton on error
+    return <ProductSliderSkeleton title="المنتجات" />
+  }
 }
 
 export default function HomePage() {

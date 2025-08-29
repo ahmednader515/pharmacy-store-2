@@ -249,7 +249,7 @@ import { i18n } from '@/i18n-config'
           'NxtAmzn is a sample Ecommerce website built with Next.js, Tailwind CSS, and MongoDB.',
         keywords: 'Next Ecommerce, Next.js, Tailwind CSS, MongoDB',
         url: 'https://next-mongo-ecommerce-final.vercel.app',
-        logo: '/icons/logo.svg',
+        logo: '/icons/logo.png',
         slogan: 'Spend less, enjoy more.',
         author: 'Next Ecommerce',
         copyright: '2000-2024, Next-Ecommerce.com, Inc. or its affiliates',
@@ -1585,7 +1585,7 @@ import { i18n } from '@/i18n-config'
           <div className='max-w-7xl mx-auto py-8 px-4 flex flex-col items-center space-y-4'>
             <div className='flex items-center space-x-4 flex-wrap md:flex-nowrap'>
               <Image
-                src='/icons/logo.svg'
+                src='/icons/logo.png'
                 alt={`${site.name} logo`}
                 width={48}
                 height={48}
@@ -1778,7 +1778,7 @@ import { getSetting } from '@/lib/actions/setting.actions'
 import { getTranslations } from 'next-intl/server'
   const { site } = await getSetting()
   const t = await getTranslations()
--                src='/icons/logo.svg'
+-                src='/icons/logo.png'
                 src={site.logo}
 -                alt={`${APP_NAME} logo`}
                 alt={`${site.name} logo`}
@@ -2368,7 +2368,7 @@ export default async function AuthLayout({
       <header className='mt-8'>
         <Link href='/'>
           <Image
-            src='/icons/logo.svg'
+            src='/icons/logo.png'
             alt='logo'
             width={64}
             height={64}
@@ -4763,7 +4763,7 @@ export default async function AdminLayout({
           <div className='flex h-16 items-center px-2'>
             <Link href='/'>
               <Image
-                src='/icons/logo.svg'
+                src='/icons/logo.png'
                 width={48}
                 height={48}
                 alt={`${site.name} logo`}
@@ -8006,7 +8006,7 @@ export default function CheckoutLayout({
         <div className='max-w-6xl mx-auto flex justify-between items-center'>
           <Link href='/'>
             <Image
-              src='/icons/logo.svg'
+              src='/icons/logo.png'
               alt='logo'
               width={70}
               height={70}
