@@ -7,7 +7,6 @@ import { Suspense } from 'react'
 
 import { getCategories, getProductsForMultipleCategories } from '@/lib/actions/product.actions'
 import { getSetting } from '@/lib/actions/setting.actions'
-import data from '@/lib/data'
 
 export const runtime = 'nodejs'
 

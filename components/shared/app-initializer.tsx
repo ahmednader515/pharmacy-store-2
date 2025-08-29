@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react'
 import useSettingStore from '@/hooks/use-setting-store'
-import data from '@/lib/data'
 
 export default function AppInitializer({
   children,
+  setting,
 }: {
   children: React.ReactNode
+  setting: any
 }) {
   const [rendered, setRendered] = useState(false)
-  const setting = data.settings[0];
 
   useEffect(() => {
     setRendered(true)

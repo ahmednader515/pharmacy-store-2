@@ -14,19 +14,19 @@ export default function ClientProviders({
   children: React.ReactNode
 }) {
   const visible = useCartSidebar()
-  const setting = data.settings[0];
+  const setting = data.settings[0]
 
   return (
-    <SessionProvider refetchOnWindowFocus={true} refetchWhenOffline={true} staleTime={0}>
+    <SessionProvider refetchOnWindowFocus={false} refetchWhenOffline={false}>
       <ThemeProvider>
-        <AppInitializer>
+        <AppInitializer setting={setting}>
           {visible ? (
-            <div className='flex min-h-screen'>
-              <div className='flex-1 overflow-hidden'>{children}</div>
+            <div className='flex min-h-screen bg-gray-50'>
+              <div className='flex-1 overflow-hidden bg-white'>{children}</div>
               <CartSidebar />
             </div>
           ) : (
-            <div>{children}</div>
+            <div className='min-h-screen bg-white'>{children}</div>
           )}
           <Toaster />
         </AppInitializer>

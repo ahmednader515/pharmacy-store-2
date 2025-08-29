@@ -48,48 +48,48 @@ export default function CartSidebar() {
   }
 
   return (
-    <div className='w-full h-full flex flex-col' dir='rtl'>
-      <div className='w-24 sm:w-32 fixed h-full border-r'>
-        <div className='p-2 h-full flex flex-col gap-2 justify-center items-center'>
-          <div className='text-center space-y-2'>
-            <div className='text-xs sm:text-sm'>المجموع الفرعي</div>
-            <div className='font-bold text-sm sm:text-base'>
-              <ProductPrice price={itemsPrice} plain />
-            </div>
-            {itemsPrice > freeShippingMinPrice && (
-              <div className='text-center text-xs'>
-                طلبك مؤهل للشحن المجاني
-              </div>
-            )}
-
-            <Link
-              className={`rounded-full hover:no-underline w-full text-xs sm:text-sm btn-mobile`}
-              href='/cart'
-            >
-              الذهاب إلى السلة
-            </Link>
-            <Separator className='mt-3' />
+    <div className='w-32 h-full bg-white border-l border-gray-200 shadow-lg flex-shrink-0' style={{ direction: 'ltr' }}>
+      <div className='p-3 h-full flex flex-col gap-3 justify-start items-center'>
+        <div className='text-center space-y-2 w-full'>
+          <div className='text-sm font-medium text-gray-700'>المجموع الفرعي</div>
+          <div className='font-bold text-base text-gray-900'>
+            <ProductPrice price={itemsPrice} plain />
           </div>
+          {itemsPrice > freeShippingMinPrice && (
+            <div className='text-center text-xs text-green-600 bg-green-50 p-2 rounded-md'>
+              طلبك مؤهل للشحن المجاني
+            </div>
+          )}
 
-          <ScrollArea className='flex-1 w-full'>
+          <Link
+            className={`rounded-full hover:no-underline w-full text-sm btn-mobile bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 block text-center transition-colors`}
+            href='/cart'
+          >
+            الذهاب إلى السلة
+          </Link>
+          <Separator className='mt-3' />
+        </div>
+
+        <ScrollArea className='flex-1 w-full'>
+          <div className='space-y-3'>
             {items.map((item) => (
-              <div key={item.clientId}>
-                <div className='my-2 sm:my-3'>
+              <div key={item.clientId} className='bg-gray-50 rounded-lg p-2'>
+                <div className='space-y-2'>
                   <Link href={`/product/${item.slug}`}>
-                    <div className='relative h-16 sm:h-24'>
+                    <div className='relative h-20 w-full'>
                       <Image
                         src={item.image}
                         alt={item.name}
                         fill
                         sizes='20vw'
-                        className='object-contain'
+                        className='object-contain rounded-md'
                       />
                     </div>
                   </Link>
-                  <div className='text-xs sm:text-sm text-center font-bold'>
+                  <div className='text-sm text-center font-bold text-gray-800'>
                     <ProductPrice price={item.price} plain />
                   </div>
-                  <div className='flex gap-1 sm:gap-2 mt-2 justify-center'>
+                  <div className='flex gap-2 justify-center'>
                     <Select
                       value={item.quantity.toString()}
                       onValueChange={(value) => {
@@ -97,7 +97,7 @@ export default function CartSidebar() {
                       }}
                       disabled={isUpdating}
                     >
-                      <SelectTrigger className='text-xs w-10 sm:w-12 ml-1 h-auto py-0'>
+                      <SelectTrigger className='text-xs w-12 h-8 py-0'>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -115,21 +115,20 @@ export default function CartSidebar() {
                       size={'sm'}
                       onClick={() => handleRemoveItem(item)}
                       disabled={isUpdating}
-                      className='h-8 w-8 sm:h-9 sm:w-9 p-0'
+                      className='h-8 w-8 p-0'
                     >
                       {isUpdating ? (
                         <LoadingSpinner size="sm" />
                       ) : (
-                        <Trash2 className='w-3 h-3 sm:w-4 sm:h-4' />
+                        <Trash2 className='w-4 h-4' />
                       )}
                     </Button>
                   </div>
                 </div>
-                <Separator />
               </div>
             ))}
-          </ScrollArea>
-        </div>
+          </div>
+        </ScrollArea>
       </div>
     </div>
   )
