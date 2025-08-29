@@ -1,12 +1,10 @@
 import React, { Suspense } from 'react'
 import { notFound } from 'next/navigation'
-import { getAllProducts, getAllCategories } from '@/lib/actions/product.actions'
+import { prisma } from '@/lib/db'
 import ProductCard from '@/components/shared/product/product-card'
 import ProductSortSelector from '@/components/shared/product/product-sort-selector'
-import ServerPagination from '@/components/shared/server-pagination'
 import SearchFilters from '@/components/shared/search-filters'
 import { Separator } from '@/components/ui/separator'
-import { IProduct } from '@/types'
 import { Card, CardContent } from '@/components/ui/card'
 
 interface SearchPageProps {
@@ -103,18 +101,69 @@ async function ProductResults({ params, translations }: {
 
   const currentPage = parseInt(page)
   const limit = 12
+  const skip = (currentPage - 1) * limit
 
-  const products = await getAllProducts({
-    query: q || '',
-    category: category || '',
-    tag: Array.isArray(tag) ? tag.join(',') : tag || '',
-    price: minPrice && maxPrice ? `${minPrice}-${maxPrice}` : '',
-    rating: '',
-    sort,
-    page: currentPage,
-  })
+  // Build Prisma where clause
+  const where: any = { isPublished: true }
+  
+  if (q && q !== 'all') {
+    where.name = { contains: q, mode: 'insensitive' }
+  }
+  
+  if (category && category !== 'all') {
+    where.category = category
+  }
+  
+  if (tag && tag !== 'all') {
+    if (Array.isArray(tag)) {
+      where.tags = { hasSome: tag }
+    } else {
+      where.tags = { has: tag }
+    }
+  }
+  
+  if (minPrice && maxPrice) {
+    where.price = { 
+      gte: parseFloat(minPrice), 
+      lte: parseFloat(maxPrice) 
+    }
+  }
 
-  const totalPages = products.totalPages
+  // Build order by clause
+  let orderBy: any = { createdAt: 'desc' }
+  if (sort === 'best-selling') {
+    orderBy = { numSales: 'desc' }
+  } else if (sort === 'price-low-to-high') {
+    orderBy = { price: 'asc' }
+  } else if (sort === 'price-high-to-low') {
+    orderBy = { price: 'desc' }
+  } else if (sort === 'avg-customer-review') {
+    orderBy = { avgRating: 'desc' }
+  }
+
+  // Direct database queries
+  const [products, totalProducts] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      orderBy,
+      skip,
+      take: limit,
+    }),
+    prisma.product.count({ where })
+  ])
+
+  // Convert Decimal values to numbers for client components
+  const normalizedProducts = products.map(product => ({
+    ...product,
+    price: Number(product.price),
+    listPrice: Number(product.listPrice),
+    avgRating: Number(product.avgRating),
+    numReviews: Number(product.numReviews),
+  }))
+
+  const totalPages = Math.ceil(totalProducts / limit)
+  const from = skip + 1
+  const to = Math.min(skip + limit, totalProducts)
 
   return (
     <>
@@ -131,11 +180,11 @@ async function ProductResults({ params, translations }: {
           params={params}
         />
         <p className='text-xs sm:text-sm text-gray-600 text-right'>
-          {translations.showing} {products.from}-{products.to} {translations.of} {products.totalProducts} {translations.products}
+          {translations.showing} {from}-{to} {translations.of} {totalProducts} {translations.products}
         </p>
       </div>
 
-      {products.products.length === 0 ? (
+      {products.length === 0 ? (
         <div className='text-center py-8 sm:py-12'>
           <h3 className='text-base sm:text-lg font-semibold mb-2'>{translations.noProductsFound}</h3>
           <p className='text-sm sm:text-base text-muted-foreground px-4'>
@@ -145,18 +194,42 @@ async function ProductResults({ params, translations }: {
       ) : (
         <>
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8'>
-            {products.products.map((product: IProduct) => (
-              <ProductCard key={product.id} product={product} />
+            {normalizedProducts.map((product) => (
+              <ProductCard key={product.id} product={product as any} />
             ))}
           </div>
 
+          {/* Simple pagination */}
           {totalPages > 1 && (
-            <ServerPagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              baseUrl="/search"
-              searchParams={params as Record<string, string>}
-            />
+            <div className="flex items-center justify-center gap-4 mt-6">
+              {currentPage > 1 && (
+                <a 
+                  href={`/search?${new URLSearchParams({
+                    ...params,
+                    page: (currentPage - 1).toString()
+                  })}`}
+                  className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  السابق
+                </a>
+              )}
+              
+              <span className="text-sm text-gray-600">
+                صفحة {currentPage} من {totalPages}
+              </span>
+              
+              {currentPage < totalPages && (
+                <a 
+                  href={`/search?${new URLSearchParams({
+                    ...params,
+                    page: (currentPage + 1).toString()
+                  })}`}
+                  className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  التالي
+                </a>
+              )}
+            </div>
           )}
         </>
       )}
@@ -165,13 +238,21 @@ async function ProductResults({ params, translations }: {
 }
 
 async function SearchFiltersSection({ params }: { params: any }) {
-  const categories = await getAllCategories()
+  // Direct database query for categories
+  const categories = await prisma.product.findMany({
+    where: { isPublished: true },
+    select: { category: true },
+    distinct: ['category'],
+    orderBy: { category: 'asc' }
+  })
+  
+  const categoryList = categories.map(c => c.category)
   const tags = ['best-seller', 'featured', 'new-arrival', 'todays-deal', 'pain-relief', 'vitamins', 'allergy', 'digestive', 'cold-flu']
 
   return (
     <div className='w-full'>
       <SearchFilters 
-        categories={categories}
+        categories={categoryList}
         tags={tags}
         maxPrice={1000}
       />

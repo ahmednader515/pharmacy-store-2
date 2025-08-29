@@ -4,9 +4,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Suspense } from 'react'
-
-import { getCategories, getProductsForMultipleCategories } from '@/lib/actions/product.actions'
-import { getSetting } from '@/lib/actions/setting.actions'
+import { prisma } from '@/lib/db'
 
 export const runtime = 'nodejs'
 
@@ -49,9 +47,7 @@ function ProductSliderSkeleton({ title }: { title: string }) {
 }
 
 // Async components for progressive loading
-async function CategoriesSection() {
-  const categories = await getCategories()
-  
+async function CategoriesSection({ categories }: { categories: string[] }) {
   const sampleImages = [
     '/images/shoes.jpg', '/images/t-shirts.jpg', '/images/wrist-watches.jpg',
     '/images/jeans.jpg', '/images/p11-1.jpg', '/images/p12-1.jpg'
@@ -88,12 +84,47 @@ async function CategoriesSection() {
   )
 }
 
-async function CategoryProductsSection() {
+async function CategoryProductsSection({ categories }: { categories: string[] }) {
   try {
-    const categories = await getCategories()
-    
-    // Use the efficient single-query function instead of multiple parallel calls
-    const productsByCategory = await getProductsForMultipleCategories(categories)
+    // Fetch products for all categories in a single query
+    const allProducts = await prisma.product.findMany({
+      where: {
+        category: { in: categories },
+        isPublished: true,
+      },
+      orderBy: [
+        { numSales: 'desc' },
+        { avgRating: 'desc' }
+      ],
+      select: {
+        name: true,
+        slug: true,
+        images: true,
+        price: true,
+        listPrice: true,
+        avgRating: true,
+        numReviews: true,
+        category: true,
+      }
+    })
+
+    // Group products by category and convert Decimal to numbers
+    const productsByCategory = categories.reduce((acc, category) => {
+      acc[category] = allProducts
+        .filter(product => product.category === category)
+        .slice(0, 8) // Limit to 8 products per category
+        .map(product => ({
+          name: product.name,
+          slug: product.slug,
+          image: Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : '',
+          images: Array.isArray(product.images) ? product.images : [],
+          price: Number(product.price),
+          listPrice: Number(product.listPrice),
+          avgRating: Number(product.avgRating),
+          numReviews: Number(product.numReviews),
+        }))
+      return acc
+    }, {} as Record<string, any[]>)
     
     return (
       <>
@@ -121,23 +152,33 @@ async function CategoryProductsSection() {
 }
 
 export default async function HomePage() {
-  // Fetch settings from database
-  const settings = await getSetting()
+  // Single database query for categories - no caching
+  const categories = await prisma.product.findMany({
+    where: { isPublished: true },
+    select: { category: true },
+    distinct: ['category'],
+    orderBy: { category: 'asc' }
+  })
+  
+  const categoryList = categories.map(c => c.category).slice(0, 6)
+  
+  // Direct database query for settings - no caching
+  const setting = await prisma.setting.findFirst()
   
   return (
     <div className="font-cairo" dir="rtl">
       {/* Hero section loads immediately */}
-      <HomeCarousel carousels={settings.carousels} />
+      <HomeCarousel carousels={setting?.carousels as any[] || []} />
       
       <div className='p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 bg-gray-50'>
         {/* Categories Section - Load first */}
         <Suspense fallback={<CategoriesSkeleton />}>
-          <CategoriesSection />
+          <CategoriesSection categories={categoryList} />
         </Suspense>
         
         {/* Category Products Sections - Load after categories */}
         <Suspense fallback={<ProductSliderSkeleton title="المنتجات" />}>
-          <CategoryProductsSection />
+          <CategoryProductsSection categories={categoryList} />
         </Suspense>
       </div>
     </div>

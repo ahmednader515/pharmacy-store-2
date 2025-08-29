@@ -1,6 +1,6 @@
 import React, { Suspense } from 'react'
 import { notFound } from 'next/navigation'
-import { getProductBySlug } from '@/lib/actions/product.actions'
+import { prisma } from '@/lib/db'
 import ProductGallery from '@/components/shared/product/product-gallery'
 import ProductPrice from '@/components/shared/product/product-price'
 import AddToCart from '@/components/shared/product/add-to-cart'
@@ -78,52 +78,67 @@ function ReviewsSkeleton() {
 
 // Async components for progressive loading
 async function ProductHeader({ slug }: { slug: string }) {
-  const product = await getProductBySlug(slug)
+  // Direct database query for product
+  const product = await prisma.product.findFirst({
+    where: { 
+      slug, 
+      isPublished: true 
+    }
+  })
 
   if (!product) {
     notFound()
+  }
+
+  // Convert Decimal values to numbers for client components
+  const productData = {
+    ...product,
+    price: Number(product.price),
+    listPrice: Number(product.listPrice),
+    avgRating: Number(product.avgRating),
+    numReviews: Number(product.numReviews),
   }
 
   return (
     <>
       {/* Track browsing history */}
       <AddToBrowsingHistory 
-        id={product.id} 
-        category={product.category}
-        name={product.name}
-        image={product.images[0]}
-        slug={product.slug}
+        id={productData.id} 
+        category={productData.category}
+        name={productData.name}
+        image={productData.images[0]}
+        slug={productData.slug}
       />
       
       <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8 sm:mb-12'>
         {/* Product Images */}
         <div>
-          <ProductGallery images={product.images} />
+          <ProductGallery images={productData.images} />
         </div>
 
         {/* Product Info */}
         <div className='space-y-4 sm:space-y-6'>
           <div>
-            <h1 className='text-2xl sm:text-3xl font-bold mb-2'>{product.name}</h1>
+            <h1 className='text-2xl sm:text-3xl font-bold mb-2'>{productData.name}</h1>
             <div className='flex items-center gap-2 mb-3 sm:mb-4'>
-              <Rating rating={product.avgRating} />
+              <Rating rating={productData.avgRating} />
               <span className='text-xs sm:text-sm text-muted-foreground'>
-                ({product.numReviews} تقييم)
+                ({productData.numReviews} تقييم)
               </span>
             </div>
             <ProductPrice 
-              price={product.price} 
-              originalPrice={product.listPrice}
+              price={productData.price} 
+              originalPrice={productData.listPrice}
               className='text-xl sm:text-2xl'
             />
           </div>
 
           <div>
-            <p className='text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4'>{product.description}</p>
+            <p className='text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4'>{productData.description}</p>
           </div>
 
           <div>
-            <AddToCart product={product} />
+            <AddToCart product={productData} />
           </div>
 
           <Separator />
@@ -134,11 +149,11 @@ async function ProductHeader({ slug }: { slug: string }) {
               <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm'>
                 <div>
                   <span className='text-muted-foreground'>الفئة:</span>
-                  <span className='mr-2'>{product.category}</span>
+                  <span className='mr-2'>{productData.category}</span>
                 </div>
                 <div>
                   <span className='text-muted-foreground'>العلامة التجارية:</span>
-                  <span className='mr-2'>{product.brand}</span>
+                  <span className='mr-2'>{productData.brand}</span>
                 </div>
               </div>
             </div>
@@ -150,8 +165,15 @@ async function ProductHeader({ slug }: { slug: string }) {
 }
 
 async function ReviewsSection({ slug }: { slug: string }) {
-  // Fetch product again to ensure we have the stable database id for reviews
-  const product = await getProductBySlug(slug)
+  // Direct database query for product to get ID for reviews
+  const product = await prisma.product.findFirst({
+    where: { 
+      slug, 
+      isPublished: true 
+    },
+    select: { id: true }
+  })
+  
   return (
     <div className='mb-8 sm:mb-12'>
       <Separator className='mb-6 sm:mb-8' />
