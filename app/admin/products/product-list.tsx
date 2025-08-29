@@ -381,11 +381,11 @@ const ProductList = () => {
 
                   {/* Product Details */}
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-600">السعر:</span>
                       <span className="font-semibold text-green-700">{safeProduct.price.toFixed(2)} ج.م</span>
                     </div>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-600">المخزون:</span>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         safeProduct.countInStock > 10 ? 'bg-green-100 text-green-800' : 
@@ -395,14 +395,14 @@ const ProductList = () => {
                         {safeProduct.countInStock}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-600">التقييم:</span>
                       <span className="flex items-center gap-1">
                         <span className="text-yellow-500">★</span>
                         <span className="font-medium">{safeProduct.avgRating}</span>
                       </span>
                     </div>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-600">منشور:</span>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         safeProduct.isPublished ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
@@ -410,7 +410,7 @@ const ProductList = () => {
                         {safeProduct.isPublished ? 'نعم' : 'لا'}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-600">آخر تحديث:</span>
                       <span className="text-sm text-gray-600">
                         {(() => {

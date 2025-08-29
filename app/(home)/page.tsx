@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { Suspense } from 'react'
 
 import { getCategories, getProductsForMultipleCategories } from '@/lib/actions/product.actions'
+import { getSetting } from '@/lib/actions/setting.actions'
 import data from '@/lib/data'
 
 export const runtime = 'nodejs'
@@ -120,11 +121,14 @@ async function CategoryProductsSection() {
   }
 }
 
-export default function HomePage() {
+export default async function HomePage() {
+  // Fetch settings from database
+  const settings = await getSetting()
+  
   return (
     <div className="font-cairo" dir="rtl">
       {/* Hero section loads immediately */}
-      <HomeCarousel />
+      <HomeCarousel carousels={settings.carousels} />
       
       <div className='p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 bg-gray-50'>
         {/* Categories Section - Load first */}

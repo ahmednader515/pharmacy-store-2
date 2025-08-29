@@ -3,17 +3,24 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import Image from 'next/image'
-import data from '@/lib/data'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
-export default function HomeCarousel() {
+interface CarouselItem {
+  image: string
+  title: string
+  url: string
+  buttonCaption: string
+}
+
+interface HomeCarouselProps {
+  carousels: CarouselItem[]
+}
+
+export default function HomeCarousel({ carousels }: HomeCarouselProps) {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [isHovering, setIsHovering] = useState(false)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
-  
-  // Get carousels data
-  const { carousels } = data.settings[0] || { carousels: [] };
   
   // Auto-slide every 5 seconds (only when not hovering)
   useEffect(() => {

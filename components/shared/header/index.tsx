@@ -7,6 +7,7 @@ import Menu from "./menu";
 import Sidebar from "./sidebar";
 import data from "@/lib/data";
 import { ShoppingCart, User, Package, Home, Shield } from "lucide-react";
+import MobileCartCount from './mobile-cart-count'
 
 // Arabic translations for categories
 const categoryTranslations: { [key: string]: string } = {
@@ -97,9 +98,7 @@ export default async function Header() {
             <Link href="/cart" className="flex flex-col items-center gap-1">
               <div className="relative">
                 <ShoppingCart className="w-6 h-6 text-gray-600" />
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  0
-                </span>
+                <MobileCartCount />
               </div>
               <span className="text-xs text-gray-600">السلة</span>
             </Link>
