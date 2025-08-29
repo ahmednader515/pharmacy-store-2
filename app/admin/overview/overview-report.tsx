@@ -19,53 +19,69 @@ import {
 } from '@/components/ui/table'
 import { calculatePastDate, formatDateTime, formatNumber } from '@/lib/utils'
 
-import React, { useEffect, useState, useTransition } from 'react'
+import React, { useEffect, useRef, useState, useTransition } from 'react'
 import { DateRange } from 'react-day-picker'
-import { getOrderSummary } from '@/lib/actions/order.actions'
+import { getOverviewChartsData, getLatestOrdersForOverview, getOverviewHeaderStats } from '@/lib/actions/order.actions'
 import { CalendarDateRangePicker } from './date-range-picker'
 import { IOrderList } from '@/types'
 import ProductPrice from '@/components/shared/product/product-price'
 import TableChart from './table-chart'
 import { Skeleton } from '@/components/ui/skeleton'
 
-export default function OverviewReport() {
-  const [date, setDate] = useState<DateRange | undefined>({
-    from: calculatePastDate(30),
-    to: new Date(),
-  })
+export default function OverviewReport({ initialDate, initialHeader }: { initialDate?: DateRange; initialHeader?: { [key: string]: any } }) {
+  const [date, setDate] = useState<DateRange | undefined>(
+    initialDate || {
+      from: calculatePastDate(30),
+      to: new Date(),
+    }
+  )
 
-  const [data, setData] = useState<{ [key: string]: any }>()
+  // Progressive state slices
+  const [header, setHeader] = useState<{ [key: string]: any } | undefined>(initialHeader)
+  const [charts, setCharts] = useState<{ [key: string]: any } | undefined>(undefined)
+  const [latest, setLatest] = useState<IOrderList[] | undefined>(undefined)
+  // Skip first header fetch if SSR provided it
+  const skipFirstFetchRef = useRef<boolean>(!!initialHeader)
   const [isPending, startTransition] = useTransition()
   useEffect(() => {
     if (date) {
+      if (skipFirstFetchRef.current) {
+        skipFirstFetchRef.current = false
+        // We have header from server. Fetch charts next, then latest.
+        startTransition(async () => {
+          try {
+            const chartsData = await getOverviewChartsData(date)
+            setCharts(chartsData)
+            const latestOrders = await getLatestOrdersForOverview()
+            setLatest(latestOrders as any)
+          } catch (err) {
+            console.error('Progressive fetch error:', err)
+          }
+        })
+        return
+      }
       startTransition(async () => {
         try {
-          const result = await getOrderSummary(date)
-          console.log('getOrderSummary result:', result)
-          setData(result)
+          // Fetch header first
+          const headerData = await getOverviewHeaderStats(date)
+          setHeader(headerData)
+          // Then charts
+          const chartsData = await getOverviewChartsData(date)
+          setCharts(chartsData)
+          // Finally latest orders
+          const latestOrders = await getLatestOrdersForOverview()
+          setLatest(latestOrders as any)
         } catch (error) {
-          console.error('Error fetching order summary:', error)
-          // Set empty data to prevent infinite loading
-          setData({
-            ordersCount: 0,
-            productsCount: 0,
-            usersCount: 0,
-            totalSales: 0,
-            monthlySales: [],
-            salesChartData: [],
-            topSalesCategories: [],
-            topSalesProducts: [],
-            latestOrders: [],
-          })
+          console.error('Error fetching overview data:', error)
+          setHeader({ ordersCount: 0, productsCount: 0, usersCount: 0, totalSales: 0 })
+          setCharts({ monthlySales: [], salesChartData: [], topSalesCategories: [], topSalesProducts: [] })
+          setLatest([] as any)
         }
       })
     }
   }, [date])
 
-  // Debug logging
-  console.log('OverviewReport data:', data)
-  
-  if (!data)
+  if (!header)
     return (
       <div className='space-y-4' style={{ fontFamily: 'Cairo, sans-serif' }}>
         <div>
@@ -116,7 +132,7 @@ export default function OverviewReport() {
             </CardHeader>
             <CardContent className='space-y-2'>
               <div className='text-2xl font-bold'>
-                <ProductPrice price={data.totalSales} plain />
+                <ProductPrice price={header.totalSales} plain />
               </div>
               <div>
                 <Link className='text-xs' href='/admin/orders'>
@@ -132,7 +148,7 @@ export default function OverviewReport() {
             </CardHeader>
             <CardContent className='space-y-2'>
               <div className='text-2xl font-bold'>
-                {formatNumber(data.ordersCount)}
+                {formatNumber(header.ordersCount)}
               </div>
               <div>
                 <Link className='text-xs' href='/admin/orders'>
@@ -147,7 +163,7 @@ export default function OverviewReport() {
               <Users />
             </CardHeader>
             <CardContent className='space-y-2'>
-              <div className='text-2xl font-bold'>{data.usersCount}</div>
+              <div className='text-2xl font-bold'>{header.usersCount}</div>
               <div>
                 <Link className='text-xs' href='/admin/users'>
                   عرض العملاء
@@ -161,7 +177,7 @@ export default function OverviewReport() {
               <Barcode />
             </CardHeader>
             <CardContent className='space-y-2'>
-              <div className='text-2xl font-bold'>{data.productsCount}</div>
+              <div className='text-2xl font-bold'>{header.productsCount}</div>
               <div>
                 <Link className='text-xs' href='/admin/products'>
                   عرض المنتجات
@@ -171,7 +187,6 @@ export default function OverviewReport() {
           </Card>
         </div>
 
-
         <div className='grid gap-4 md:grid-cols-2'>
           <Card>
             <CardHeader className='text-right'>
@@ -179,7 +194,11 @@ export default function OverviewReport() {
               <CardDescription>تقديري · آخر 6 أشهر</CardDescription>
             </CardHeader>
             <CardContent>
-              <TableChart data={data.monthlySales || []} labelType='month' />
+              {charts ? (
+                <TableChart data={charts.monthlySales || []} labelType='month' />
+              ) : (
+                <Skeleton className='h-60 w-full' />
+              )}
             </CardContent>
           </Card>
           <Card>
@@ -191,7 +210,11 @@ export default function OverviewReport() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <TableChart data={data.topSalesProducts || []} labelType='product' />
+              {charts ? (
+                <TableChart data={charts.topSalesProducts || []} labelType='product' />
+              ) : (
+                <Skeleton className='h-60 w-full' />
+              )}
             </CardContent>
           </Card>
         </div>
@@ -204,7 +227,8 @@ export default function OverviewReport() {
             <CardContent>
               {/* Desktop Table - Hidden on mobile */}
               <div className='hidden md:block'>
-                <Table>
+                {latest ? (
+                  <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead className='text-right'>المشتري</TableHead>
@@ -214,7 +238,7 @@ export default function OverviewReport() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {(data.latestOrders || []).map((order: IOrderList) => (
+                    {(latest || []).map((order: IOrderList) => (
                       <TableRow key={order.id}>
                         <TableCell className='text-right'>
                           {order.user ? order.user.name : 'مستخدم محذوف'}
@@ -235,12 +259,15 @@ export default function OverviewReport() {
                       </TableRow>
                     ))}
                   </TableBody>
-                </Table>
+                  </Table>
+                ) : (
+                  <Skeleton className='h-60 w-full' />
+                )}
               </div>
 
               {/* Mobile Cards - Visible only on mobile */}
               <div className='md:hidden space-y-3'>
-                {(data.latestOrders || []).map((order: IOrderList) => (
+                {(latest || []).map((order: IOrderList) => (
                   <div key={order.id} className="bg-gray-50 border border-gray-200 rounded-lg p-3 space-y-2">
                     {/* Customer Name */}
                     <div className="font-medium text-gray-900">

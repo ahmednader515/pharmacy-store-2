@@ -11,6 +11,10 @@ import { sendAskReviewOrderItems, sendPurchaseReceipt } from '@/lib/services/ema
 import { DateRange } from 'react-day-picker'
 import data from '../data'
 
+// Lightweight in-memory cache for admin overview
+const overviewCache = new Map<string, { data: any; ts: number }>()
+const OVERVIEW_TTL_MS = 60 * 1000
+
 // CREATE
 export const createOrder = async (clientSideCart: Cart) => {
   try {
@@ -414,152 +418,57 @@ export async function getOrderSummary(date: DateRange) {
       console.error('Invalid date range provided:', date)
       throw new Error('Invalid date range provided')
     }
+
+    // Simple cache to avoid refetching identical ranges repeatedly
+    const cacheKey = `${date.from.toISOString()}_${date.to.toISOString()}`
+    const cached = overviewCache.get(cacheKey)
+    if (cached && Date.now() - cached.ts < OVERVIEW_TTL_MS) {
+      return cached.data
+    }
     
-    // Check if we should use mock data (when prisma is not available)
-    if (!prisma) {
-      console.log('📝 Mock mode: returning mock order summary data')
-      // Return mock data for order summary
-      return {
-        ordersCount: 3, // Mock orders from data.ts
-        productsCount: data.products.length,
-        usersCount: data.users.length,
-        totalSales: 173.32, // Sum of mock orders
-        monthlySales: [
-          { label: '2024-01', value: 54.64 },
-          { label: '2024-02', value: 40.51 },
-          { label: '2024-03', value: 78.17 },
-        ],
-        salesChartData: [
-          { date: '2024-01-15', totalSales: 54.64 },
-          { date: '2024-02-20', totalSales: 40.51 },
-          { date: '2024-03-10', totalSales: 78.17 },
-        ],
-        topSalesCategories: [
-          { _id: 'تسكين الآلام', totalSales: 3 },
-          { _id: 'فيتامينات ومكملات غذائية', totalSales: 4 },
-          { _id: 'الحساسية والجيوب الأنفية', totalSales: 1 },
-        ],
-        topSalesProducts: [
-          { id: '1', label: 'Tylenol Extra Strength', image: '/images/p11-1.jpg', value: 25.98 },
-          { id: '2', label: 'Centrum Silver Multivitamin', image: '/images/p13-1.jpg', value: 18.99 },
-          { id: '3', label: 'Claritin 24-Hour', image: '/images/p14-1.jpg', value: 16.99 },
-        ],
-        latestOrders: [
-          {
-            id: 'order-1',
-            user: { name: 'John Doe' },
-            totalPrice: 54.64,
-            createdAt: new Date('2024-01-15'),
-          },
-          {
-            id: 'order-2',
-            user: { name: 'Jane Harris' },
-            totalPrice: 40.51,
-            createdAt: new Date('2024-02-20'),
-          },
-          {
-            id: 'order-3',
-            user: { name: 'Jack Ryan' },
-            totalPrice: 78.17,
-            createdAt: new Date('2024-03-10'),
-          },
-        ],
-      }
-    } else {
-      // Database mode - use real Prisma client
-      if (!prisma) {
-        throw new Error('Database connection failed')
-      }
+    // Database mode - use real Prisma client
+    const dateWhere = {
+      gte: date.from,
+      lte: date.to,
+    }
 
-  const [ordersCount, productsCount, usersCount] = await Promise.all([
-    prisma.order.count({
-      where: {
-        createdAt: {
-          gte: date.from,
-          lte: date.to,
-        },
-      },
-    }),
-    prisma.product.count({
-      where: {
-        createdAt: {
-          gte: date.from,
-          lte: date.to,
-        },
-      },
-    }),
-    prisma.user.count({
-      where: {
-        createdAt: {
-          gte: date.from,
-          lte: date.to,
-        },
-      },
-    }),
-  ])
+    // Run queries sequentially to avoid exhausting low-connection pools in dev
+    const ordersCount = await prisma.order.count({ where: { createdAt: dateWhere } })
+    const productsCount = await prisma.product.count({ where: { createdAt: dateWhere } })
+    const usersCount = await prisma.user.count({ where: { createdAt: dateWhere } })
+    const totalSalesResult = await prisma.order.aggregate({
+      where: { createdAt: dateWhere },
+      _sum: { totalPrice: true },
+    })
+    const monthlySalesData = await prisma.order.findMany({
+      where: { createdAt: { gte: new Date(date.from.getFullYear(), date.from.getMonth() - 5, 1) } },
+      select: { createdAt: true, totalPrice: true },
+    })
+    const topSalesProducts = await getTopSalesProductsFast(date)
+    const topSalesCategories = await getTopSalesCategoriesFast(date)
 
-  // Calculate total sales
-  const totalSalesResult = await prisma.order.aggregate({
-    where: {
-      createdAt: {
-        gte: date.from,
-        lte: date.to,
-      },
-    },
-    _sum: {
-      totalPrice: true,
-    },
-  })
-  const totalSales = totalSalesResult._sum.totalPrice || 0
+    const totalSales = totalSalesResult._sum.totalPrice || 0
 
-  // Calculate monthly sales
-  const today = new Date()
-  const sixMonthEarlierDate = new Date(
-    today.getFullYear(),
-    today.getMonth() - 5,
-    1
-  )
-  
-  const monthlySalesData = await prisma.order.findMany({
-    where: {
-      createdAt: {
-        gte: sixMonthEarlierDate,
-      },
-    },
-    select: {
-      createdAt: true,
-      totalPrice: true,
-    },
-  })
+    // Process monthly sales data
+    const monthlySalesMap = new Map<string, number>()
+    monthlySalesData.forEach((order: any) => {
+      const monthKey = order.createdAt.toISOString().slice(0, 7) // YYYY-MM
+      monthlySalesMap.set(monthKey, (monthlySalesMap.get(monthKey) || 0) + Number(order.totalPrice))
+    })
+    const monthlySales = Array.from(monthlySalesMap.entries())
+      .map(([label, value]) => ({ label, value }))
+      .sort((a, b) => a.label.localeCompare(b.label))
 
-  // Process monthly sales data
-  const monthlySalesMap = new Map<string, number>()
-  monthlySalesData.forEach((order: any) => {
-    const monthKey = order.createdAt.toISOString().slice(0, 7) // YYYY-MM format
-    monthlySalesMap.set(monthKey, (monthlySalesMap.get(monthKey) || 0) + Number(order.totalPrice))
-  })
+    const {
+      common: { pageSize },
+    } = data.settings[0]
+    const limit = pageSize
 
-  const monthlySales = Array.from(monthlySalesMap.entries())
-    .map(([label, value]) => ({ label, value }))
-    .sort((a, b) => b.label.localeCompare(a.label))
-
-  const topSalesCategories = await getTopSalesCategories(date)
-  const topSalesProducts = await getTopSalesProducts(date)
-
-  const {
-    common: { pageSize },
-  } = data.settings[0];
-  const limit = pageSize
-  
-  const latestOrders = await prisma.order.findMany({
-    include: {
-      user: {
-        select: { name: true }
-      }
-    },
-    orderBy: { createdAt: 'desc' },
-    take: limit
-  })
+    const latestOrders = await prisma.order.findMany({
+      include: { user: { select: { name: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    })
 
     const result = {
       ordersCount,
@@ -572,11 +481,84 @@ export async function getOrderSummary(date: DateRange) {
       topSalesProducts: JSON.parse(JSON.stringify(topSalesProducts)),
       latestOrders: JSON.parse(JSON.stringify(latestOrders)),
     }
-    
+
+    overviewCache.set(cacheKey, { data: result, ts: Date.now() })
     return result
-    } // Close the else block
   } catch (error) {
     console.error('Error in getOrderSummary:', error)
+    throw error
+  }
+}
+
+// Smaller, chunked server actions for progressive loading
+export async function getOverviewHeaderStats(date: DateRange) {
+  try {
+    if (!date?.from || !date?.to) throw new Error('Invalid date range')
+    const dateWhere = { gte: date.from, lte: date.to }
+    const ordersCount = await prisma.order.count({ where: { createdAt: dateWhere } })
+    const productsCount = await prisma.product.count({ where: { createdAt: dateWhere } })
+    const usersCount = await prisma.user.count({ where: { createdAt: dateWhere } })
+    const totalSalesResult = await prisma.order.aggregate({
+      where: { createdAt: dateWhere },
+      _sum: { totalPrice: true },
+    })
+    return {
+      ordersCount,
+      productsCount,
+      usersCount,
+      totalSales: Number(totalSalesResult._sum.totalPrice || 0),
+    }
+  } catch (error) {
+    console.error('Error in getOverviewHeaderStats:', error)
+    throw error
+  }
+}
+
+export async function getOverviewChartsData(date: DateRange) {
+  try {
+    if (!date?.from || !date?.to) throw new Error('Invalid date range')
+    const monthlySalesData = await prisma.order.findMany({
+      where: { createdAt: { gte: new Date(date.from.getFullYear(), date.from.getMonth() - 5, 1) } },
+      select: { createdAt: true, totalPrice: true },
+    })
+    const monthlySalesMap = new Map<string, number>()
+    monthlySalesData.forEach((order: any) => {
+      const monthKey = order.createdAt.toISOString().slice(0, 7)
+      monthlySalesMap.set(monthKey, (monthlySalesMap.get(monthKey) || 0) + Number(order.totalPrice))
+    })
+    const monthlySales = Array.from(monthlySalesMap.entries())
+      .map(([label, value]) => ({ label, value }))
+      .sort((a, b) => a.label.localeCompare(b.label))
+
+    const salesChartData = await getSalesChartData(date)
+    const topSalesProducts = await getTopSalesProductsFast(date)
+    const topSalesCategories = await getTopSalesCategoriesFast(date)
+    return {
+      monthlySales: JSON.parse(JSON.stringify(monthlySales)),
+      salesChartData: JSON.parse(JSON.stringify(salesChartData)),
+      topSalesProducts: JSON.parse(JSON.stringify(topSalesProducts)),
+      topSalesCategories: JSON.parse(JSON.stringify(topSalesCategories)),
+    }
+  } catch (error) {
+    console.error('Error in getOverviewChartsData:', error)
+    throw error
+  }
+}
+
+export async function getLatestOrdersForOverview(limit?: number) {
+  try {
+    const {
+      common: { pageSize },
+    } = data.settings[0]
+    const take = limit || pageSize
+    const latestOrders = await prisma.order.findMany({
+      include: { user: { select: { name: true } } },
+      orderBy: { createdAt: 'desc' },
+      take,
+    })
+    return JSON.parse(JSON.stringify(latestOrders))
+  } catch (error) {
+    console.error('Error in getLatestOrdersForOverview:', error)
     throw error
   }
 }
@@ -609,83 +591,34 @@ async function getSalesChartData(date: DateRange) {
     .sort((a, b) => a.date.localeCompare(b.date))
 }
 
-async function getTopSalesProducts(date: DateRange) {
-  // Mock mode removed: always use database
-
-  const orders = await prisma.order.findMany({
-    where: {
-      createdAt: {
-        gte: date.from,
-        lte: date.to,
-      },
-    },
-    include: {
-      orderItems: true,
-    },
+async function getTopSalesProductsFast(date: DateRange) {
+  const rows = await prisma.orderItem.findMany({
+    where: { order: { createdAt: { gte: date.from, lte: date.to } } },
+    select: { productId: true, name: true, image: true, price: true, quantity: true },
   })
-
-  // Calculate total sales per product
   const productSales = new Map<string, { name: string; image: string; totalSales: number }>()
-  
-  orders.forEach((order: any) => {
-    order.orderItems.forEach((item: any) => {
-      const productId = item.productId
-      const existing = productSales.get(productId)
-      const itemTotal = item.quantity * Number(item.price)
-      
-      if (existing) {
-        existing.totalSales += itemTotal
-      } else {
-        productSales.set(productId, {
-          name: item.name,
-          image: item.image,
-          totalSales: itemTotal,
-        })
-      }
-    })
-  })
-
+  for (const r of rows) {
+    const prev = productSales.get(r.productId) || { name: r.name, image: r.image, totalSales: 0 }
+    prev.totalSales += Number(r.price) * Number(r.quantity)
+    productSales.set(r.productId, prev)
+  }
   return Array.from(productSales.entries())
-    .map(([id, data]) => ({
-      id,
-      label: data.name,
-      image: data.image,
-      value: data.totalSales,
-    }))
+    .map(([id, data]) => ({ id, label: data.name, image: data.image, value: data.totalSales }))
     .sort((a, b) => b.value - a.value)
     .slice(0, 6)
 }
 
-async function getTopSalesCategories(date: DateRange, limit = 5) {
-  // Mock mode removed: always use database
-
-  const orders = await prisma.order.findMany({
-    where: {
-      createdAt: {
-        gte: date.from,
-        lte: date.to,
-      },
-    },
-    include: {
-      orderItems: true,
-    },
+async function getTopSalesCategoriesFast(date: DateRange, limit = 5) {
+  const rows = await prisma.orderItem.findMany({
+    where: { order: { createdAt: { gte: date.from, lte: date.to } } },
+    select: { category: true, quantity: true },
   })
-
-  // Calculate total sales per category
   const categorySales = new Map<string, number>()
-  
-  orders.forEach((order: any) => {
-    order.orderItems.forEach((item: any) => {
-      const category = item.category
-      categorySales.set(category, (categorySales.get(category) || 0) + item.quantity)
-    })
-  })
-
+  for (const r of rows) {
+    categorySales.set(r.category, (categorySales.get(r.category) || 0) + Number(r.quantity))
+  }
   return Array.from(categorySales.entries())
-    .map(([category, totalSales]) => ({
-      _id: category,
-      totalSales,
-    }))
+    .map(([category, totalSales]) => ({ _id: category, totalSales }))
     .sort((a, b) => b.totalSales - a.totalSales)
     .slice(0, limit)
 }
