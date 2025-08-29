@@ -1,65 +1,7 @@
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/prisma'
 
-// Database connection configuration
-let DATABASE_URL = process.env.DATABASE_URL
-
-// Fallback to local database if DATABASE_URL is not set
-if (!DATABASE_URL) {
-  DATABASE_URL = process.env.DIRECT_DATABASE_URL || process.env.DATABASE_URL
-}
-
-console.log('DATABASE_URL exists:', !!DATABASE_URL)
-
-// Require DATABASE_URL in all environments
-if (!DATABASE_URL) {
-  throw new Error('DATABASE_URL is not set. Please configure your environment variables.')
-}
-
-// Create a single Prisma instance with connection pooling
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
-}
-
-export const prisma = globalForPrisma.prisma ?? new PrismaClient({
-  datasources: {
-    db: {
-      url: DATABASE_URL,
-    },
-  },
-  // Connection pool settings
-  __internal: {
-    engine: {
-      connectionLimit: 5,
-      pool: {
-        min: 1,
-        max: 10,
-        acquireTimeoutMillis: 30000,
-        createTimeoutMillis: 30000,
-        destroyTimeoutMillis: 5000,
-        idleTimeoutMillis: 30000,
-        reapIntervalMillis: 1000,
-        createRetryIntervalMillis: 200,
-      }
-    }
-  }
-})
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
-
-// Graceful shutdown
-process.on('beforeExit', async () => {
-  await prisma.$disconnect()
-})
-
-process.on('SIGINT', async () => {
-  await prisma.$disconnect()
-  process.exit(0)
-})
-
-process.on('SIGTERM', async () => {
-  await prisma.$disconnect()
-  process.exit(0)
-})
+// Re-export unified prisma client to avoid duplicate instances
+export { prisma }
 
 // Utility function to fetch products for multiple categories efficiently
 export async function getProductsForMultipleCategories(categories: string[]) {

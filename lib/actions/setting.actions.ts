@@ -4,11 +4,20 @@ import { prisma } from '@/lib/prisma'
 import data from '@/lib/data'
 import { ISettingInput } from '@/types'
 import { formatError } from '@/lib/utils'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, unstable_cache, revalidateTag } from 'next/cache'
 
 export async function getSetting(): Promise<ISettingInput> {
   try {
-    const existing = await prisma.setting.findFirst()
+    const cached = await unstable_cache(
+      async () => {
+        const s = await prisma.setting.findFirst()
+        if (!s) return null
+        return JSON.parse(JSON.stringify(s)) as ISettingInput
+      },
+      ['settings'],
+      { revalidate: 300, tags: ['settings'] }
+    )()
+    const existing = cached
     if (!existing) {
       // Seed with default settings from data.ts if none exist
       const created = await prisma.setting.create({
@@ -26,9 +35,11 @@ export async function getSetting(): Promise<ISettingInput> {
           defaultDeliveryDate: data.settings[0].defaultDeliveryDate,
         },
       })
+      // Invalidate settings cache after seed
+      revalidateTag('settings')
       return JSON.parse(JSON.stringify(created)) as ISettingInput
     }
-    return JSON.parse(JSON.stringify(existing)) as ISettingInput
+    return existing as ISettingInput
   } catch (err) {
     console.error('Error in getSetting:', err)
     // Fallback to static data to avoid breaking the app
@@ -77,6 +88,7 @@ export async function updateSetting(newSetting: ISettingInput) {
 
     revalidatePath('/admin/settings')
     revalidatePath('/')
+    revalidateTag('settings')
 
     return { success: true, message: 'تم حفظ الإعدادات بنجاح' }
   } catch (error) {

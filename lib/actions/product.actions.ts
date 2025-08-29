@@ -2,7 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import data from '@/lib/data'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, unstable_cache } from 'next/cache'
 import { formatError } from '../utils'
 import { ProductInputSchema, ProductUpdateSchema } from '../validator'
 import { IProductInput } from '@/types'
@@ -31,6 +31,21 @@ const setGlobalCachedData = <T>(cacheKey: string, data: T): void => {
   cache[cacheKey] = { data, time: Date.now() }
   ;(global as any).__cache = cache
 }
+
+// Centralized cached categories (shared by header and homepage)
+const getCachedCategories = unstable_cache(
+  async () => {
+    const categories = await prisma.product.findMany({
+      where: { isPublished: true },
+      select: { category: true },
+      distinct: ['category'],
+      orderBy: { category: 'asc' }
+    })
+    return categories.map((c: any) => c.category)
+  },
+  ['categories'],
+  { revalidate: 300, tags: ['categories'] }
+)
 
 // Simple in-memory cache for homepage data
 const homepageCache = new Map()
@@ -255,43 +270,7 @@ export async function getAllProductsForAdmin({
 
 export async function getAllCategories() {
   try {
-    console.log('🔍 getAllCategories called')
-    // Check cache first
-    const cachedCategories = getGlobalCachedData('categories', async () => {
-      try {
-        // Use pooled client + caching for stability and performance
-        const categories = await prisma.product.findMany({
-          where: { isPublished: true },
-          select: { category: true },
-          distinct: ['category']
-        })
-        return categories.map((c: any) => c.category)
-      } catch (error) {
-        console.warn('Database error in getAllCategories cache:', error)
-        return []
-      }
-    }, CACHE_DURATION)
-    
-    if (cachedCategories) {
-      console.log('📋 Using cached categories:', cachedCategories.length)
-      return cachedCategories
-    }
-    
-    // If not cached, fetch and cache
-    try {
-      // Use pooled client + caching for stability and performance
-      const categories = await prisma.product.findMany({
-        where: { isPublished: true },
-        select: { category: true },
-        distinct: ['category']
-      })
-      const result = categories.map((c: any) => c.category)
-      setGlobalCachedData('categories', result)
-      return result
-    } catch (error) {
-      console.error('Database error in getAllCategories:', error)
-      return []
-    }
+    return await getCachedCategories()
   } catch (error) {
     console.error('Error in getAllCategories:', error)
     return []
@@ -715,26 +694,8 @@ export async function getHomePageData() {
 // PROGRESSIVE LOADING FUNCTIONS FOR HOMEPAGE - OPTIMIZED FOR POSTGRESQL
 export async function getCategories() {
   try {
-    // Check cache first
-    const cacheKey = 'categories'
-    const cached = getCachedData(cacheKey)
-    if (cached) return cached
-
-    // Use PostgreSQL-specific optimizations
-    const categories = await prisma.product.findMany({
-      where: { isPublished: true },
-      select: { category: true },
-      distinct: ['category'],
-      // Add orderBy for consistent results
-      orderBy: { category: 'asc' }
-    })
-    
-    const result = categories.map((c: any) => c.category).slice(0, 6)
-    
-    // Cache the result
-    setCachedData(cacheKey, result)
-    
-    return result
+    const categories = await getCachedCategories()
+    return categories.slice(0, 6)
   } catch (error) {
     console.error('Error fetching categories:', error)
     return []
@@ -743,32 +704,30 @@ export async function getCategories() {
 
 export async function getTodaysDeals() {
   try {
-    // Check cache first
-    const cacheKey = 'todaysDeals'
-    const cached = getCachedData(cacheKey)
-    if (cached) return cached
-
-    // Optimize for PostgreSQL with better indexing hints
-    const products = await prisma.product.findMany({
-      where: {
-        tags: { has: 'best-seller' },
-        isPublished: true,
-      },
-      orderBy: [
-        { createdAt: 'desc' },
-        { numSales: 'desc' } // Secondary sort for better performance
-      ],
-      take: 10,
-      select: {
-        name: true,
-        slug: true,
-        images: true,
-        price: true,
-        listPrice: true,
-        avgRating: true,
-        numReviews: true,
-      }
-    })
+    const products = await unstable_cache(
+      async () => prisma.product.findMany({
+        where: {
+          tags: { has: 'best-seller' },
+          isPublished: true,
+        },
+        orderBy: [
+          { createdAt: 'desc' },
+          { numSales: 'desc' }
+        ],
+        take: 10,
+        select: {
+          name: true,
+          slug: true,
+          images: true,
+          price: true,
+          listPrice: true,
+          avgRating: true,
+          numReviews: true,
+        }
+      }),
+      ['todaysDeals'],
+      { revalidate: 300, tags: ['products'] }
+    )()
     
     const result = products.map((product: any) => ({
       name: product.name,
@@ -780,9 +739,6 @@ export async function getTodaysDeals() {
       avgRating: Number(product.avgRating),
       numReviews: Number(product.numReviews),
     }))
-    
-    // Cache the result
-    setCachedData(cacheKey, result)
     
     return result
   } catch (error) {
@@ -793,32 +749,30 @@ export async function getTodaysDeals() {
 
 export async function getBestSellingProducts() {
   try {
-    // Check cache first
-    const cacheKey = 'bestSellingProducts'
-    const cached = getCachedData(cacheKey)
-    if (cached) return cached
-
-    // Optimize for PostgreSQL with better indexing hints
-    const products = await prisma.product.findMany({
-      where: {
-        tags: { has: 'best-seller' },
-        isPublished: true,
-      },
-      orderBy: [
-        { numSales: 'desc' },
-        { avgRating: 'desc' } // Secondary sort for better performance
-      ],
-      take: 10,
-      select: {
-        name: true,
-        slug: true,
-        images: true,
-        price: true,
-        listPrice: true,
-        avgRating: true,
-        numReviews: true,
-      }
-    })
+    const products = await unstable_cache(
+      async () => prisma.product.findMany({
+        where: {
+          tags: { has: 'best-seller' },
+          isPublished: true,
+        },
+        orderBy: [
+          { numSales: 'desc' },
+          { avgRating: 'desc' }
+        ],
+        take: 10,
+        select: {
+          name: true,
+          slug: true,
+          images: true,
+          price: true,
+          listPrice: true,
+          avgRating: true,
+          numReviews: true,
+        }
+      }),
+      ['bestSellingProducts'],
+      { revalidate: 300, tags: ['products'] }
+    )()
     
     const result = products.map((product: any) => ({
       name: product.name,
@@ -830,9 +784,6 @@ export async function getBestSellingProducts() {
       avgRating: Number(product.avgRating),
       numReviews: Number(product.numReviews),
     }))
-    
-    // Cache the result
-    setCachedData(cacheKey, result)
     
     return result
   } catch (error) {

@@ -1,4 +1,4 @@
-import { connectToDatabase } from './index'
+import { prisma } from '@/lib/prisma'
 
 // Use global to ensure singleton across all modules
 declare global {
@@ -22,7 +22,8 @@ export async function initializeServerDatabase() {
   console.log('🚀 Initializing server database connection...')
   
   try {
-    const connection = await connectToDatabase()
+    // Touch the database to ensure connectivity; prisma will lazy-connect
+    await prisma.$queryRaw`SELECT 1`
     
     // Mock mode removed: require successful DB connection
     
@@ -42,5 +43,5 @@ export async function getServerDatabase() {
   if (!global.__serverDbInitialized) {
     await initializeServerDatabase()
   }
-  return connectToDatabase()
+  return prisma
 }

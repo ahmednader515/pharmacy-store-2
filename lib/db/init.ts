@@ -1,4 +1,4 @@
-import { connectToDatabase } from './index'
+import { prisma } from '@/lib/prisma'
 
 /**
  * Initialize database connection when the application starts
@@ -8,7 +8,7 @@ export async function initializeDatabase() {
   console.log('🚀 Initializing database connection...')
   
   try {
-    const connection = await connectToDatabase()
+    await prisma.$queryRaw`SELECT 1`
     
     // Mock mode removed: require successful DB connection
     
@@ -24,5 +24,5 @@ export async function initializeDatabase() {
  * Check if database is ready
  */
 export function isDatabaseReady() {
-  return !require('./index').isUsingMockData()
+  return true
 }
