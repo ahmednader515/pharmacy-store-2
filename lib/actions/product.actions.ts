@@ -72,11 +72,23 @@ export async function createProduct(data: IProductInput) {
     // Always use database
     
     const { reviews, ...productData } = product
+    
+    // Look up categoryId from category name
+    let categoryId = null
+    if (productData.category) {
+      const categoryRecord = await prisma.category.findFirst({
+        where: { name: productData.category, isActive: true },
+        select: { id: true }
+      })
+      categoryId = categoryRecord?.id || null
+    }
+    
     await prisma.product.create({
       data: {
         name: productData.name,
         slug: productData.slug,
         category: productData.category,
+        categoryId: categoryId,
         images: productData.images,
         brand: productData.brand,
         description: productData.description,
@@ -112,12 +124,23 @@ export async function updateProduct(data: z.infer<typeof ProductUpdateSchema>) {
     
     const { reviews, _id, ...productData } = product
     
+    // Look up categoryId from category name
+    let categoryId = null
+    if (productData.category) {
+      const categoryRecord = await prisma.category.findFirst({
+        where: { name: productData.category, isActive: true },
+        select: { id: true }
+      })
+      categoryId = categoryRecord?.id || null
+    }
+    
     await prisma.product.update({
       where: { id: _id },
       data: {
         name: productData.name,
         slug: productData.slug,
         category: productData.category,
+        categoryId: categoryId,
         images: productData.images,
         brand: productData.brand,
         description: productData.description,
@@ -269,6 +292,17 @@ export async function getAllProductsForAdmin({
 
 export async function getAllCategories() {
   try {
+    // First try to get from new category table
+    const categories = await prisma.category.findMany({
+      where: { isActive: true },
+      orderBy: { name: 'asc' }
+    })
+    
+    if (categories.length > 0) {
+      return categories.map(cat => cat.name)
+    }
+    
+    // Fallback to old method for backward compatibility
     return await getCachedCategories()
   } catch (error) {
     console.error('Error in getAllCategories:', error)

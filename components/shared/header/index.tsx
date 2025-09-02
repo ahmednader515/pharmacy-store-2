@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getAllCategories } from "@/lib/actions/product.actions";
+import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import Search from "./search";
 import Menu from "./menu";
@@ -34,12 +35,17 @@ const categoryTranslations: { [key: string]: string } = {
 };
 
 export default async function Header() {
-  const categories = await getAllCategories();
+  // Get categories from the new category table
+  const categories = await prisma.category.findMany({
+    where: { isActive: true },
+    orderBy: { name: 'asc' }
+  });
+  
   const { site } = data.settings[0];
   const session = await auth();
   
   // Ensure categories is an array of strings
-  const categoryList = Array.isArray(categories) ? categories : [];
+  const categoryList = categories.map(cat => cat.name);
   
   return (
     <header className="bg-white text-gray-800 font-cairo" dir="rtl">
@@ -50,7 +56,7 @@ export default async function Header() {
           <div className="flex items-center justify-between">
             {/* Hamburger Menu */}
             <div className="block md:hidden">
-              <Sidebar categories={categoryList} />
+              <Sidebar />
             </div>
             
             {/* Logo - Centered on mobile */}

@@ -25,7 +25,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
-import { createProduct, updateProduct, getAllCategories } from '@/lib/actions/product.actions'
+import { createProduct, updateProduct } from '@/lib/actions/product.actions'
+import { getAllCategories } from '@/lib/actions/category.actions'
 import { IProductInput } from '@/types'
 import { UploadButton } from '@/lib/uploadthing'
 import { ProductInputSchema, ProductUpdateSchema } from '@/lib/validator'
@@ -67,7 +68,6 @@ const ProductForm = ({
   const router = useRouter()
   const [categories, setCategories] = useState<string[]>([])
   const [isLoadingCategories, setIsLoadingCategories] = useState(true)
-  const [newCategoryInput, setNewCategoryInput] = useState('')
   const { isLoading: isSubmitting, withLoading } = useLoading()
 
   const form = useForm<IProductInput>({
@@ -89,10 +89,12 @@ const ProductForm = ({
       try {
         setIsLoadingCategories(true)
         const categoriesData = await getAllCategories()
-        setCategories(categoriesData)
+        // Extract category names from category objects
+        const categoryNames = categoriesData.map((cat: any) => cat.name)
+        setCategories(categoryNames)
         
         // If this is an update and the product has a category not in the list, add it
-        if (type === 'Update' && product?.category && !categoriesData.includes(product.category)) {
+        if (type === 'Update' && product?.category && !categoryNames.includes(product.category)) {
           setCategories(prev => [...prev, product.category])
         }
       } catch (error) {
@@ -104,21 +106,15 @@ const ProductForm = ({
     fetchCategories()
   }, [type, product, productId])
 
-  // Reset new category input when form changes
-  useEffect(() => {
-    const category = form.watch('category')
-    if (category !== '__new__') {
-      setNewCategoryInput('')
-    }
-  }, [form])
+
 
   const { toast } = useToast()
   const onSubmit = async (values: IProductInput) => {
     // Validate that category is not a placeholder value
-    if (values.category === '__new__' || values.category === '__loading__' || values.category === '__no_categories__') {
+    if (values.category === '__loading__' || values.category === '__no_categories__') {
       toast({
         variant: 'destructive',
-        description: 'يرجى اختيار فئة صحيحة أو إدخال فئة جديدة',
+        description: 'يرجى اختيار فئة صحيحة',
       })
       return
     }
@@ -228,38 +224,16 @@ const ProductForm = ({
                         ) : categories.length === 0 ? (
                           <SelectItem value="__no_categories__" disabled>لا توجد فئات متاحة</SelectItem>
                         ) : (
-                          <>
-                            {categories.map((category) => (
-                              <SelectItem key={category} value={category}>
-                                {category}
-                              </SelectItem>
-                            ))}
-                            <SelectItem value="__new__">+ إضافة فئة جديدة</SelectItem>
-                          </>
+                          categories.map((category) => (
+                            <SelectItem key={category} value={category}>
+                              {category}
+                            </SelectItem>
+                          ))
                         )}
                       </SelectContent>
                     </Select>
                   </FormControl>
-                  {field.value === '__new__' && (
-                    <Input
-                      value={newCategoryInput}
-                      onChange={(e) => {
-                        const newCategory = e.target.value
-                        setNewCategoryInput(newCategory)
-                        if (newCategory.trim()) {
-                          field.onChange(newCategory.trim())
-                        }
-                      }}
-                      onBlur={(e) => {
-                        // If user leaves the input empty, reset to empty string
-                        if (!e.target.value.trim()) {
-                          field.onChange('')
-                          setNewCategoryInput('')
-                        }
-                      }}
-                      className="mt-2 border-gray-300 bg-white text-gray-900 focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  )}
+
                   <FormMessage />
                 </FormItem>
               )}

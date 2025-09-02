@@ -111,7 +111,21 @@ async function ProductResults({ params, translations }: {
   }
   
   if (category && category !== 'all') {
-    where.category = category
+    // Look up category by name to get ID
+    const categoryRecord = await prisma.category.findFirst({
+      where: { name: category, isActive: true },
+      select: { id: true }
+    })
+    
+    if (categoryRecord) {
+      where.OR = [
+        { categoryId: categoryRecord.id },
+        { category: category } // Fallback for products not yet migrated
+      ]
+    } else {
+      // Fallback to old system if category not found in new system
+      where.category = category
+    }
   }
   
   if (tag && tag !== 'all') {
@@ -237,15 +251,13 @@ async function ProductResults({ params, translations }: {
 }
 
 async function SearchFiltersSection({ params }: { params: any }) {
-  // Direct database query for categories
-  const categories = await (prisma as any).product.findMany({
-    where: { isPublished: true },
-    select: { category: true },
-    distinct: ['category'],
-    orderBy: { category: 'asc' }
+  // Get categories from the new category table
+  const categories = await (prisma as any).category.findMany({
+    where: { isActive: true },
+    orderBy: { name: 'asc' }
   })
   
-  const categoryList = categories.map((c: any) => c.category)
+  const categoryList = categories.map((c: any) => c.name)
   const tags = ['best-seller', 'featured', 'new-arrival', 'todays-deal', 'pain-relief', 'vitamins', 'allergy', 'digestive', 'cold-flu']
 
   return (

@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 import SidebarClient from "./sidebar.client";
 
 // Arabic translations for categories
@@ -25,11 +26,20 @@ const categoryTranslations: { [key: string]: string } = {
   'Oral Care': 'العناية بالفم والأسنان'
 };
 
-export default async function Sidebar({ categories }: { categories: string[] }) {
+export default async function Sidebar() {
   const session = await auth()
+  
+  // Get categories from the new category table
+  const categories = await prisma.category.findMany({
+    where: { isActive: true },
+    orderBy: { name: 'asc' }
+  });
+  
+  const categoryList = categories.map(cat => cat.name);
+  
   return (
     <SidebarClient 
-      categories={categories} 
+      categories={categoryList} 
       session={session ? { name: session.user.name } : null}
     />
   )

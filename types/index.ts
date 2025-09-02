@@ -40,6 +40,13 @@ export type Data = {
   webPages: IWebPageInput[]
   users: IUserInput[]
   products: IProductInput[]
+  categories: {
+    name: string
+    slug: string
+    description: string
+    image: string
+    isActive: boolean
+  }[]
   orders: {
     userId: string
     expectedDeliveryDate: Date

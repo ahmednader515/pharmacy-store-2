@@ -19,6 +19,7 @@ async function main() {
   await prisma.userAddress.deleteMany()
   await prisma.user.deleteMany()
   await prisma.product.deleteMany()
+  await prisma.category.deleteMany()
   await prisma.setting.deleteMany()
   await prisma.webPage.deleteMany()
 
@@ -55,13 +56,34 @@ async function main() {
 
   console.log(`👥 Created ${users.length} users`)
 
+  // Create categories
+  const categories = await Promise.all(
+    data.categories.map((categoryData) =>
+      prisma.category.create({
+        data: {
+          name: categoryData.name,
+          slug: categoryData.slug,
+          description: categoryData.description,
+          image: categoryData.image,
+          isActive: categoryData.isActive,
+        }
+      })
+    )
+  )
+
+  console.log(`📂 Created ${categories.length} categories`)
+
   // Create products
   const products = await Promise.all(
-    data.products.map((productData) =>
-      prisma.product.create({
+    data.products.map((productData) => {
+      // Find the category by name to get the categoryId
+      const category = categories.find(cat => cat.name === productData.category)
+      
+      return prisma.product.create({
         data: {
           name: productData.name,
           slug: productData.slug,
+          categoryId: category?.id || null,
           category: productData.category,
           images: productData.images,
           brand: productData.brand,
@@ -79,7 +101,7 @@ async function main() {
           isPublished: productData.isPublished,
         }
       })
-    )
+    })
   )
 
   console.log(`📦 Created ${products.length} products`)

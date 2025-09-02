@@ -47,34 +47,37 @@ function ProductSliderSkeleton({ title }: { title: string }) {
 }
 
 // Async components for progressive loading
-async function CategoriesSection({ categories }: { categories: string[] }) {
-  const sampleImages = [
-    '/images/shoes.jpg', '/images/t-shirts.jpg', '/images/wrist-watches.jpg',
-    '/images/jeans.jpg', '/images/p11-1.jpg', '/images/p12-1.jpg'
-  ]
-
+async function CategoriesSection({ categories }: { categories: { id: string, name: string, image?: string }[] }) {
   return (
     <Card className='w-full rounded-xl shadow-sm'>
       <CardContent className='card-mobile'>
         <h2 className='text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-right text-gray-800'>استكشف الفئات</h2>
-        <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4'>
-          {categories.map((category: string, index: number) => (
+        <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3 sm:gap-4'>
+          {categories.map((category) => (
             <Link
-              key={category}
-              href={`/search?category=${category}`}
+              key={category.id}
+              href={`/search?category=${category.name}`}
               className='flex flex-col items-center group'
             >
               <div className='relative overflow-hidden rounded-lg bg-gray-50 mb-2 sm:mb-3 w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center'>
-                <Image
-                  src={sampleImages[index % sampleImages.length]}
-                  alt={category}
-                  width={80}
-                  height={80}
-                  className='object-cover rounded-lg transition-transform duration-300 group-hover:scale-105'
-                />
+                {category.image ? (
+                  <Image
+                    src={category.image}
+                    alt={category.name}
+                    width={80}
+                    height={80}
+                    className='object-cover rounded-lg transition-transform duration-300 group-hover:scale-105'
+                  />
+                ) : (
+                  <div className='w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center'>
+                    <span className='text-blue-600 font-semibold text-xs sm:text-sm'>
+                      {category.name.charAt(0)}
+                    </span>
+                  </div>
+                )}
               </div>
               <p className='text-center text-xs sm:text-sm text-gray-700 group-hover:text-blue-600 transition-colors duration-200'>
-                {category}
+                {category.name}
               </p>
             </Link>
           ))}
@@ -86,10 +89,28 @@ async function CategoriesSection({ categories }: { categories: string[] }) {
 
 async function CategoryProductsSection({ categories }: { categories: string[] }) {
   try {
-    // Fetch products for all categories in a single query
+    // Get category IDs for the category names
+    const categoryRecords = await prisma.category.findMany({
+      where: {
+        name: { in: categories },
+        isActive: true,
+      },
+      select: {
+        id: true,
+        name: true,
+      }
+    })
+
+    const categoryIds = categoryRecords.map(cat => cat.id)
+    const categoryIdToName = Object.fromEntries(categoryRecords.map(cat => [cat.id, cat.name]))
+
+    // Fetch products using the new category relationship
     const allProducts = await prisma.product.findMany({
       where: {
-        category: { in: categories },
+        OR: [
+          { categoryId: { in: categoryIds } },
+          { category: { in: categories } } // Fallback for products not yet migrated
+        ],
         isPublished: true,
       },
       orderBy: [
@@ -105,13 +126,18 @@ async function CategoryProductsSection({ categories }: { categories: string[] })
         avgRating: true,
         numReviews: true,
         category: true,
+        categoryId: true,
       }
     })
 
     // Group products by category and convert Decimal to numbers
     const productsByCategory = categories.reduce((acc, category) => {
       acc[category] = allProducts
-        .filter(product => product.category === category)
+        .filter(product => {
+          // Match either by new category relationship or old category string
+          const categoryName = product.categoryId ? categoryIdToName[product.categoryId] : product.category
+          return categoryName === category
+        })
         .slice(0, 8) // Limit to 8 products per category
         .map(product => ({
           name: product.name,
@@ -152,15 +178,18 @@ async function CategoryProductsSection({ categories }: { categories: string[] })
 }
 
 export default async function HomePage() {
-  // Single database query for categories - no caching
-  const categories = await prisma.product.findMany({
-    where: { isPublished: true },
-    select: { category: true },
-    distinct: ['category'],
-    orderBy: { category: 'asc' }
+  // Get categories from the new category table
+  const categories = await prisma.category.findMany({
+    where: { isActive: true },
+    orderBy: { sortOrder: 'asc' },
+    select: {
+      id: true,
+      name: true,
+      image: true,
+    }
   })
   
-  const categoryList = categories.map(c => c.category).slice(0, 6)
+  const categoryList = categories.map(c => c.name)
   
   // Direct database query for settings - no caching
   const setting = await prisma.setting.findFirst()
@@ -173,7 +202,7 @@ export default async function HomePage() {
       <div className='p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 bg-gray-50'>
         {/* Categories Section - Load first */}
         <Suspense fallback={<CategoriesSkeleton />}>
-          <CategoriesSection categories={categoryList} />
+          <CategoriesSection categories={categories} />
         </Suspense>
         
         {/* Category Products Sections - Load after categories */}

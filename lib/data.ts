@@ -804,11 +804,57 @@ const reviews = [
   },
 ]
 
+const categories = [
+  {
+    name: 'تسكين الآلام',
+    slug: 'pain-relief',
+    description: 'أدوية تسكين الآلام والحمى',
+    image: '',
+    isActive: true,
+  },
+  {
+    name: 'فيتامينات ومكملات غذائية',
+    slug: 'vitamins-supplements',
+    description: 'فيتامينات ومكملات غذائية لصحة أفضل',
+    image: '',
+    isActive: true,
+  },
+  {
+    name: 'الحساسية والجيوب الأنفية',
+    slug: 'allergy-sinus',
+    description: 'أدوية الحساسية والجيوب الأنفية',
+    image: '',
+    isActive: true,
+  },
+  {
+    name: 'صحة الجهاز الهضمي',
+    slug: 'digestive-health',
+    description: 'أدوية ومكملات صحة الجهاز الهضمي',
+    image: '',
+    isActive: true,
+  },
+  {
+    name: 'نزلات البرد والإنفلونزا',
+    slug: 'cold-flu',
+    description: 'أدوية نزلات البرد والإنفلونزا',
+    image: '',
+    isActive: true,
+  },
+  {
+    name: 'العناية بالبشرة',
+    slug: 'skin-care',
+    description: 'منتجات العناية بالبشرة والصحة الجلدية',
+    image: '',
+    isActive: true,
+  },
+]
+
 const data: Data = {
   users,
   products,
   orders,
   reviews,
+  categories,
   webPages: [
     {
       title: 'About Us',
