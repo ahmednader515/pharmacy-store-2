@@ -112,21 +112,32 @@ export default function TableChart({
           key={id || `${label}-${index}`}
           className='grid grid-cols-[100px_1fr_80px] md:grid-cols-[250px_1fr_80px] gap-2 space-y-4  '
         >
-          {image ? (
+          {labelType === 'product' && image && image !== '/images/placeholder.jpg' ? (
             <Link className='flex items-end' href={`/admin/products/${id}`}>
               <Image
-                className='rounded border  aspect-square object-scale-down max-w-full h-auto mx-auto mr-1'
-                src={image!}
+                className='rounded border aspect-square object-cover max-w-full h-auto mx-auto mr-1'
+                src={image}
                 alt={label}
                 width={36}
                 height={36}
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement
+                  target.src = '/images/placeholder.jpg'
+                }}
               />
               <p className='text-center text-sm whitespace-nowrap overflow-hidden text-ellipsis'>
                 {label}
               </p>
             </Link>
           ) : (
-            <div className='flex items-end text-sm'>{label}</div>
+            <div className='flex items-end text-sm'>
+              {labelType === 'product' && (
+                <div className='w-9 h-9 bg-gray-200 rounded border flex items-center justify-center mr-2'>
+                  <span className='text-xs text-gray-500'>IMG</span>
+                </div>
+              )}
+              <span className='text-sm'>{label}</span>
+            </div>
           )}
 
           <ProgressBar value={percentage} />

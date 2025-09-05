@@ -495,15 +495,32 @@ export async function getOverviewHeaderStats(date: DateRange) {
   try {
     if (!date?.from || !date?.to) throw new Error('Invalid date range')
     const dateWhere = { gte: date.from, lte: date.to }
+    
+    // Count all orders (paid and unpaid)
     const ordersCount = await prisma.order.count({ where: { createdAt: dateWhere } })
+    
+    // Count only paid orders for revenue calculation
+    const paidOrdersCount = await prisma.order.count({ 
+      where: { 
+        createdAt: dateWhere,
+        isPaid: true 
+      } 
+    })
+    
     const productsCount = await prisma.product.count({ where: { createdAt: dateWhere } })
     const usersCount = await prisma.user.count({ where: { createdAt: dateWhere } })
+    
+    // Calculate total sales only from paid orders
     const totalSalesResult = await prisma.order.aggregate({
-      where: { createdAt: dateWhere },
+      where: { 
+        createdAt: dateWhere,
+        isPaid: true 
+      },
       _sum: { totalPrice: true },
     })
+    
     return {
-      ordersCount,
+      ordersCount: paidOrdersCount, // Show only paid orders count
       productsCount,
       usersCount,
       totalSales: Number(totalSalesResult._sum.totalPrice || 0),
@@ -517,8 +534,13 @@ export async function getOverviewHeaderStats(date: DateRange) {
 export async function getOverviewChartsData(date: DateRange) {
   try {
     if (!date?.from || !date?.to) throw new Error('Invalid date range')
+    
+    // Only get paid orders for monthly sales data
     const monthlySalesData = await prisma.order.findMany({
-      where: { createdAt: { gte: new Date(date.from.getFullYear(), date.from.getMonth() - 5, 1) } },
+      where: { 
+        createdAt: { gte: new Date(date.from.getFullYear(), date.from.getMonth() - 5, 1) },
+        isPaid: true 
+      },
       select: { createdAt: true, totalPrice: true },
     })
     const monthlySalesMap = new Map<string, number>()
@@ -551,7 +573,10 @@ export async function getLatestOrdersForOverview(limit?: number) {
       common: { pageSize },
     } = data.settings[0]
     const take = limit || pageSize
+    
+    // Only get paid orders for latest sales
     const latestOrders = await prisma.order.findMany({
+      where: { isPaid: true },
       include: { user: { select: { name: true } } },
       orderBy: { createdAt: 'desc' },
       take,
@@ -566,12 +591,14 @@ export async function getLatestOrdersForOverview(limit?: number) {
 async function getSalesChartData(date: DateRange) {
   // Mock mode removed: always use database
 
+  // Only get paid orders for sales chart data
   const orders = await prisma.order.findMany({
     where: {
       createdAt: {
         gte: date.from,
         lte: date.to,
       },
+      isPaid: true,
     },
     select: {
       createdAt: true,
@@ -592,25 +619,66 @@ async function getSalesChartData(date: DateRange) {
 }
 
 async function getTopSalesProductsFast(date: DateRange) {
-  const rows = await prisma.orderItem.findMany({
-    where: { order: { createdAt: { gte: date.from, lte: date.to } } },
-    select: { productId: true, name: true, image: true, price: true, quantity: true },
+  // First, get the top selling product IDs from paid orders
+  const orderItems = await prisma.orderItem.findMany({
+    where: { 
+      order: { 
+        createdAt: { gte: date.from, lte: date.to },
+        isPaid: true 
+      } 
+    },
+    select: { productId: true, price: true, quantity: true },
   })
-  const productSales = new Map<string, { name: string; image: string; totalSales: number }>()
-  for (const r of rows) {
-    const prev = productSales.get(r.productId) || { name: r.name, image: r.image, totalSales: 0 }
-    prev.totalSales += Number(r.price) * Number(r.quantity)
-    productSales.set(r.productId, prev)
+  
+  // Calculate sales totals for each product
+  const productSales = new Map<string, number>()
+  for (const item of orderItems) {
+    const currentTotal = productSales.get(item.productId) || 0
+    productSales.set(item.productId, currentTotal + (Number(item.price) * Number(item.quantity)))
   }
-  return Array.from(productSales.entries())
-    .map(([id, data]) => ({ id, label: data.name, image: data.image, value: data.totalSales }))
-    .sort((a, b) => b.value - a.value)
+  
+  // Get top 6 product IDs by sales
+  const topProductIds = Array.from(productSales.entries())
+    .sort((a, b) => b[1] - a[1])
     .slice(0, 6)
+    .map(([productId]) => productId)
+  
+  // Fetch fresh product data from database
+  const products = await prisma.product.findMany({
+    where: { id: { in: topProductIds } },
+    select: { id: true, name: true, images: true },
+  })
+  
+  // Create a map for quick lookup
+  const productMap = new Map(products.map(p => [p.id, p]))
+  
+  // Return products with fresh data, maintaining sales order
+  return topProductIds
+    .map(productId => {
+      const product = productMap.get(productId)
+      const totalSales = productSales.get(productId) || 0
+      
+      if (!product) return null
+      
+      return {
+        id: product.id,
+        label: product.name,
+        image: product.images[0] || '/images/placeholder.jpg', // Use first image or placeholder
+        value: totalSales
+      }
+    })
+    .filter(Boolean) // Remove any null entries
 }
 
 async function getTopSalesCategoriesFast(date: DateRange, limit = 5) {
+  // Only get categories from paid orders
   const rows = await prisma.orderItem.findMany({
-    where: { order: { createdAt: { gte: date.from, lte: date.to } } },
+    where: { 
+      order: { 
+        createdAt: { gte: date.from, lte: date.to },
+        isPaid: true 
+      } 
+    },
     select: { category: true, quantity: true },
   })
   const categorySales = new Map<string, number>()

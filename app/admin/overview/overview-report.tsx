@@ -143,7 +143,7 @@ export default function OverviewReport({ initialDate, initialHeader }: { initial
           </Card>
           <Card>
             <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-              <CardTitle className='text-sm font-medium text-right'>المبيعات</CardTitle>
+              <CardTitle className='text-sm font-medium text-right'>الطلبات المدفوعة</CardTitle>
               <CreditCard />
             </CardHeader>
             <CardContent className='space-y-2'>
@@ -152,7 +152,7 @@ export default function OverviewReport({ initialDate, initialHeader }: { initial
               </div>
               <div>
                 <Link className='text-xs' href='/admin/orders'>
-                  عرض الطلبات
+                  عرض الطلبات المدفوعة
                 </Link>
               </div>
             </CardContent>
@@ -222,7 +222,7 @@ export default function OverviewReport({ initialDate, initialHeader }: { initial
         <div>
           <Card>
             <CardHeader className='text-right'>
-              <CardTitle>المبيعات الحديثة</CardTitle>
+              <CardTitle>المبيعات الحديثة (الطلبات المدفوعة فقط)</CardTitle>
             </CardHeader>
             <CardContent>
               {/* Desktop Table - Hidden on mobile */}

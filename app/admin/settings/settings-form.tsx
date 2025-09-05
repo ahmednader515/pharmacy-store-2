@@ -12,6 +12,7 @@ import { toast } from '@/hooks/use-toast'
 import { Plus, Trash2, Save, Image as ImageIcon, Upload, Truck, Calculator, DollarSign } from 'lucide-react'
 import data from '@/lib/data'
 import { updateSetting } from '@/lib/actions/setting.actions'
+import { useUploadThing } from '@/lib/uploadthing'
 
 interface CarouselItem {
   title: string
@@ -63,6 +64,10 @@ export default function SettingsForm({ setting }: { setting: any }) {
     ] as SeasonalDiscount[],
   })
   const [isLoading, setIsLoading] = useState(false)
+  const [uploadingImages, setUploadingImages] = useState<Set<number>>(new Set())
+
+  // UploadThing hook for image uploads
+  const { startUpload, isUploading } = useUploadThing('imageUploader')
 
   useEffect(() => {
     const settings = setting || data.settings[0]
@@ -95,22 +100,22 @@ export default function SettingsForm({ setting }: { setting: any }) {
     
     // Auto-update URL when title changes
     if (field === 'title') {
-      newCarouselItems[index].url = `/search?category=${value}`
+      const slug = value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+      newCarouselItems[index].url = `/search?category=${slug}`
     }
     
     setCarouselItems(newCarouselItems)
   }
 
   const addCarouselItem = () => {
-    setCarouselItems([
-      ...carouselItems,
-      {
-        title: 'عنوان جديد',
-        buttonCaption: 'زر جديد',
-        image: '/images/banner1.jpg',
-        url: '/search?category=عنوان جديد'
-      }
-    ])
+    const newItem: CarouselItem = {
+      title: 'عنوان جديد',
+      buttonCaption: 'زر جديد',
+      image: '/images/banner1.jpg',
+      url: '/search?category=عنوان جديد'
+    }
+    
+    setCarouselItems(prev => [...prev, newItem])
   }
 
   const removeCarouselItem = (index: number) => {
@@ -128,24 +133,38 @@ export default function SettingsForm({ setting }: { setting: any }) {
 
   const handleImageUpload = async (index: number, file: File) => {
     try {
-      // For now, we'll use a local file URL as a placeholder
-      // In production, you would upload to your server or cloud storage
-      const imageUrl = URL.createObjectURL(file)
+      setUploadingImages(prev => new Set(prev).add(index))
       
-      const newCarouselItems = [...carouselItems]
-      newCarouselItems[index].image = imageUrl
-      setCarouselItems(newCarouselItems)
+      // Upload to UploadThing
+      const uploadResult = await startUpload([file])
       
-      toast({
-        title: 'تم تحديث الصورة',
-        description: 'تم تحديث الصورة بنجاح (ملاحظة: هذا مؤقت، يرجى تحديث الرابط يدوياً)',
-        variant: 'default'
-      })
+      if (uploadResult && uploadResult[0]) {
+        const imageUrl = uploadResult[0].url
+        
+        const newCarouselItems = [...carouselItems]
+        newCarouselItems[index].image = imageUrl
+        setCarouselItems(newCarouselItems)
+        
+        toast({
+          title: 'تم تحديث الصورة',
+          description: 'تم رفع الصورة بنجاح إلى الخادم',
+          variant: 'default'
+        })
+      } else {
+        throw new Error('Upload failed')
+      }
     } catch (error) {
+      console.error('Image upload error:', error)
       toast({
-        title: 'خطأ في تحديث الصورة',
-        description: 'فشل في تحديث الصورة. يرجى المحاولة مرة أخرى.',
+        title: 'خطأ في رفع الصورة',
+        description: 'فشل في رفع الصورة. يرجى المحاولة مرة أخرى.',
         variant: 'destructive'
+      })
+    } finally {
+      setUploadingImages(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(index)
+        return newSet
       })
     }
   }
@@ -187,9 +206,29 @@ export default function SettingsForm({ setting }: { setting: any }) {
     setIsLoading(true)
     
     try {
+      // Validate carousel items before submission
+      const validCarouselItems = carouselItems.filter(item => 
+        item.title.trim() && 
+        item.buttonCaption.trim() && 
+        item.image.trim() && 
+        item.url.trim()
+      )
+
+      if (validCarouselItems.length === 0) {
+        toast({
+          title: 'خطأ في التحقق',
+          description: 'يجب أن يحتوي الكاروسيل على عنصر واحد صالح على الأقل',
+          variant: 'destructive'
+        })
+        setIsLoading(false)
+        return
+      }
+
+      // Get existing settings and merge with new data
+      const existingSettings = setting || data.settings[0]
       const newSetting = {
-        ...data.settings[0],
-        carousels: carouselItems,
+        ...existingSettings,
+        carousels: validCarouselItems,
         deliverySettings,
         taxSettings,
         productPricing,
@@ -211,6 +250,7 @@ export default function SettingsForm({ setting }: { setting: any }) {
       }
       
     } catch (error) {
+      console.error('Settings save error:', error)
       toast({
         title: 'خطأ في الحفظ',
         description: 'فشل في حفظ الإعدادات. يرجى المحاولة مرة أخرى.',
@@ -238,10 +278,24 @@ export default function SettingsForm({ setting }: { setting: any }) {
           </div>
         </CardHeader>
         <CardContent className='space-y-6'>
-          {carouselItems.map((item, index) => (
+          {carouselItems.length === 0 ? (
+            <div className='text-center py-8 text-muted-foreground'>
+              <ImageIcon className='h-12 w-12 mx-auto mb-4 opacity-50' />
+              <p>لا توجد عناصر في الكاروسيل</p>
+              <p className='text-sm'>اضغط على "إضافة عنصر" لبدء إضافة عناصر الكاروسيل</p>
+            </div>
+          ) : (
+            carouselItems.map((item, index) => (
             <div key={index} className='border rounded-lg p-4 space-y-4'>
               <div className='flex items-center justify-between'>
-                <h4 className='font-semibold'>عنصر الكاروسيل {index + 1}</h4>
+                <div className='flex items-center gap-2'>
+                  <h4 className='font-semibold'>عنصر الكاروسيل {index + 1}</h4>
+                  {(!item.title.trim() || !item.buttonCaption.trim() || !item.image.trim() || !item.url.trim()) && (
+                    <span className='text-xs text-orange-500 bg-orange-50 px-2 py-1 rounded'>
+                      غير مكتمل
+                    </span>
+                  )}
+                </div>
                 <Button
                   variant='destructive'
                   size='sm'
@@ -272,6 +326,19 @@ export default function SettingsForm({ setting }: { setting: any }) {
                     placeholder='نص الزر'
                   />
                 </div>
+              </div>
+              
+              <div className='space-y-2'>
+                <Label htmlFor={`carouselUrl${index}`}>رابط الزر</Label>
+                <Input
+                  id={`carouselUrl${index}`}
+                  value={item.url}
+                  onChange={(e) => handleCarouselChange(index, 'url', e.target.value)}
+                  placeholder='/search?category=example'
+                />
+                <p className='text-xs text-muted-foreground'>
+                  سيتم إنشاء الرابط تلقائياً عند تغيير العنوان، أو يمكنك تعديله يدوياً
+                </p>
               </div>
               
               <div className='space-y-4'>
@@ -309,15 +376,13 @@ export default function SettingsForm({ setting }: { setting: any }) {
                         variant='outline'
                         size='sm'
                         onClick={() => document.getElementById(`imageUpload${index}`)?.click()}
+                        disabled={uploadingImages.has(index) || isUploading}
                       >
                         <Upload className='h-4 w-4 ml-2' />
-                        رفع صورة جديدة
+                        {uploadingImages.has(index) || isUploading ? 'جاري الرفع...' : 'رفع صورة جديدة'}
                       </Button>
                       <p className='text-xs text-muted-foreground'>
-                        الصورة الحالية: {item.image}
-                      </p>
-                      <p className='text-xs text-muted-foreground'>
-                        رابط الزر: {item.url}
+                        الصورة الحالية: {item.image.length > 50 ? `${item.image.substring(0, 50)}...` : item.image}
                       </p>
                     </div>
                   </div>
@@ -326,7 +391,8 @@ export default function SettingsForm({ setting }: { setting: any }) {
               
               {index < carouselItems.length - 1 && <Separator />}
             </div>
-          ))}
+            ))
+          )}
         </CardContent>
       </Card>
 

@@ -20,10 +20,11 @@ const DashboardPage = async () => {
     to: new Date(),
   }
 
-  // Direct database queries for overview stats
-  const [totalOrders, totalRevenue, totalProducts, totalUsers] = await Promise.all([
+  // Direct database queries for overview stats - only paid orders
+  const [paidOrdersCount, totalRevenue, totalProducts, totalUsers] = await Promise.all([
     prisma.order.count({
       where: {
+        isPaid: true,
         createdAt: {
           gte: initialDate.from,
           lte: initialDate.to,
@@ -47,7 +48,7 @@ const DashboardPage = async () => {
   ])
 
   const initialHeader = {
-    ordersCount: totalOrders,
+    ordersCount: paidOrdersCount, // Only paid orders
     totalSales: Number(totalRevenue._sum.totalPrice || 0),
     productsCount: totalProducts,
     usersCount: totalUsers,

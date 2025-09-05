@@ -107,13 +107,13 @@ export function getMonthName(yearMonth: string): string {
   // Add safety checks
   if (!yearMonth || typeof yearMonth !== 'string') {
     console.warn('getMonthName: Invalid input:', yearMonth)
-    return 'Unknown Month'
+    return 'شهر غير معروف'
   }
   
   const parts = yearMonth.split('-')
   if (parts.length !== 2) {
     console.warn('getMonthName: Invalid format:', yearMonth)
-    return 'Unknown Month'
+    return 'شهر غير معروف'
   }
   
   const [year, month] = parts.map(Number)
@@ -121,15 +121,20 @@ export function getMonthName(yearMonth: string): string {
   // Check if the parsed values are valid numbers
   if (isNaN(year) || isNaN(month) || month < 1 || month > 12) {
     console.warn('getMonthName: Invalid year or month:', { year, month })
-    return 'Unknown Month'
+    return 'شهر غير معروف'
   }
   
-  const date = new Date(year, month - 1)
-  const monthName = date.toLocaleString('default', { month: 'long' })
+  // Arabic month names
+  const arabicMonths = [
+    'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+    'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+  ]
+  
+  const monthName = arabicMonths[month - 1]
   const now = new Date()
 
   if (year === now.getFullYear() && month === now.getMonth() + 1) {
-    return `${monthName} Ongoing`
+    return `${monthName} (جاري)`
   }
   return monthName
 }

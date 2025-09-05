@@ -73,6 +73,7 @@ export default function CategoryManagement() {
   const [isLoading, setIsLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
   const { toast } = useToast()
 
   const form = useForm<CategoryFormData>({
@@ -176,6 +177,7 @@ export default function CategoryManagement() {
   // Handle edit
   const handleEdit = (category: Category) => {
     setEditingCategory(category)
+    setIsUploading(false)
     form.reset({
       name: category.name,
       slug: category.slug,
@@ -189,6 +191,7 @@ export default function CategoryManagement() {
   // Handle new category
   const handleNew = () => {
     setEditingCategory(null)
+    setIsUploading(false)
     form.reset({
       name: '',
       slug: '',
@@ -322,15 +325,21 @@ export default function CategoryManagement() {
       </Card>
 
       {/* Add/Edit Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
+      <Dialog open={isDialogOpen} onOpenChange={(open) => {
+        setIsDialogOpen(open)
+        if (!open) {
+          setIsUploading(false)
+        }
+      }}>
+        <DialogContent className="max-w-sm max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>
               {editingCategory ? 'تعديل الفئة' : 'إضافة فئة جديدة'}
             </DialogTitle>
           </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <div className="flex-1 overflow-y-auto pr-2">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="name"
@@ -379,7 +388,7 @@ export default function CategoryManagement() {
                       <Textarea
                         {...field}
                         placeholder="أدخل وصف الفئة (اختياري)"
-                        rows={3}
+                        rows={2}
                       />
                     </FormControl>
                     <FormMessage />
@@ -394,9 +403,9 @@ export default function CategoryManagement() {
                   <FormItem>
                     <FormLabel>صورة الفئة</FormLabel>
                     <FormControl>
-                      <div className="space-y-4">
+                      <div className="space-y-3">
                         {field.value && (
-                          <div className="relative w-32 h-32 border rounded-lg overflow-hidden">
+                          <div className="relative w-24 h-24 border rounded-lg overflow-hidden">
                             <Image
                               src={field.value}
                               alt="Category preview"
@@ -407,30 +416,42 @@ export default function CategoryManagement() {
                               type="button"
                               variant="destructive"
                               size="sm"
-                              className="absolute top-1 right-1 h-6 w-6 p-0"
+                              className="absolute top-1 right-1 h-5 w-5 p-0 text-xs"
                               onClick={() => field.onChange('')}
                             >
                               ×
                             </Button>
                           </div>
                         )}
-                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                        <div className={`border-2 border-dashed rounded-lg p-3 text-center ${
+                          isUploading ? 'border-blue-300 bg-blue-50' : 'border-gray-300'
+                        }`}>
                           <UploadButton
                             endpoint="imageUploader"
+                            onUploadBegin={() => {
+                              setIsUploading(true)
+                            }}
                             onClientUploadComplete={(res: { url: string }[]) => {
                               field.onChange(res[0].url)
+                              setIsUploading(false)
                             }}
                             onUploadError={(error: Error) => {
+                              setIsUploading(false)
                               toast({
                                 variant: 'destructive',
                                 description: `خطأ في رفع الصورة: ${error.message}`,
                               })
                             }}
                             content={{
-                              button: field.value ? 'تغيير الصورة' : 'رفع صورة الفئة',
+                              button: isUploading ? 'جاري الرفع...' : (field.value ? 'تغيير الصورة' : 'رفع صورة الفئة'),
                               allowedContent: 'PNG, JPG, GIF حتى 4MB',
                             }}
                           />
+                          {isUploading && (
+                            <p className="text-xs text-blue-600 mt-2">
+                              جاري رفع الصورة، يرجى الانتظار...
+                            </p>
+                          )}
                         </div>
                       </div>
                     </FormControl>
@@ -459,20 +480,26 @@ export default function CategoryManagement() {
                 )}
               />
 
-              <div className="flex justify-end gap-2 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
-                >
-                  إلغاء
-                </Button>
-                <Button type="submit">
-                  {editingCategory ? 'تحديث' : 'إنشاء'}
-                </Button>
-              </div>
-            </form>
-          </Form>
+              </form>
+            </Form>
+          </div>
+          <div className="flex-shrink-0 flex justify-end gap-2 pt-4 border-t">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsDialogOpen(false)}
+              disabled={isUploading}
+            >
+              إلغاء
+            </Button>
+            <Button 
+              type="submit"
+              onClick={form.handleSubmit(onSubmit)}
+              disabled={isUploading}
+            >
+              {isUploading ? 'جاري الرفع...' : (editingCategory ? 'تحديث' : 'إنشاء')}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
