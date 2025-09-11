@@ -77,7 +77,7 @@ export default async function AdminUser(props: {
                 </TableCell>
                 <TableCell className='py-4 px-4'>
                   <Button asChild size='sm'>
-                    <Link href={`/admin/users/edit/${user.id}`}>
+                    <Link href={`/admin/users/${user.id}`}>
                       تعديل
                     </Link>
                   </Button>
@@ -120,7 +120,7 @@ export default async function AdminUser(props: {
             {/* Actions */}
             <div className="border-t border-gray-100 pt-3">
               <Button asChild size='sm' className="w-full">
-                <Link href={`/admin/users/edit/${user.id}`}>
+                <Link href={`/admin/users/${user.id}`}>
                   تعديل
                 </Link>
               </Button>

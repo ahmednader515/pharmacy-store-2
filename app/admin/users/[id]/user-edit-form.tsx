@@ -87,7 +87,7 @@ const UserEditForm = ({ user }: { user: IUserInput & { id: string } }) => {
 
   return (
     <Form {...form}>
-      <div className='space-y-8'>
+      <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
         <div className='flex flex-col gap-5 md:flex-row'>
           <FormField
             control={form.control}
@@ -148,13 +148,8 @@ const UserEditForm = ({ user }: { user: IUserInput & { id: string } }) => {
         </div>
         <div className='flex-between'>
           <Button 
-            type='button' 
+            type='submit' 
             disabled={form.formState.isSubmitting}
-            onClick={() => {
-              const values = form.getValues()
-              console.log('Button clicked, calling onSubmit with values:', values)
-              onSubmit(values)
-            }}
           >
             {form.formState.isSubmitting ? 'Submitting...' : `Update User`}
           </Button>
@@ -166,7 +161,7 @@ const UserEditForm = ({ user }: { user: IUserInput & { id: string } }) => {
             Back
           </Button>
         </div>
-      </div>
+      </form>
     </Form>
   )
 }
