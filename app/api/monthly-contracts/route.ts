@@ -4,10 +4,10 @@ import { prisma } from '@/lib/prisma'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, phone, email, branch, medicineNames, prescriptionUrl } = body
+    const { name, phone, deliveryAddress, branch, medicineNames, prescriptionUrl } = body
 
     // Validate required fields
-    if (!name || !phone || !email || !branch || !medicineNames) {
+    if (!name || !phone || !deliveryAddress || !branch || !medicineNames) {
       return NextResponse.json(
         { error: 'جميع الحقول مطلوبة' },
         { status: 400 }
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       data: {
         name,
         phone,
-        email,
+        deliveryAddress,
         branch,
         medicineNames,
         prescriptionUrl: prescriptionUrl || null,

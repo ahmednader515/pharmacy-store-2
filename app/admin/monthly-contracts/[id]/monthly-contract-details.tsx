@@ -14,7 +14,7 @@ type MonthlyContract = {
   id: string
   name: string
   phone: string
-  email: string
+  deliveryAddress: string
   branch: string
   medicineNames: string
   prescriptionUrl: string | null
@@ -102,20 +102,23 @@ export default function MonthlyContractDetails({ contract }: MonthlyContractDeta
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8" dir="rtl">
+    <div className="min-h-screen bg-gray-50 py-4 sm:py-8" dir="rtl">
       <div className="container mx-auto px-4 max-w-4xl">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <Button asChild variant="outline" size="sm">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <Button asChild variant="outline" size="sm" className="w-fit">
               <Link href="/admin/orders">
                 <ArrowLeft className="w-4 h-4 ml-2" />
-                العودة للطلبات
+                <span className="hidden sm:inline">العودة للطلبات</span>
+                <span className="sm:hidden">العودة</span>
               </Link>
             </Button>
-            <h1 className="text-2xl font-bold text-gray-900">تفاصيل التعاقد الشهري</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">تفاصيل التعاقد الشهري</h1>
           </div>
-          {getStatusBadge(contract.status)}
+          <div className="flex justify-start sm:justify-end">
+            {getStatusBadge(contract.status)}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -137,8 +140,8 @@ export default function MonthlyContractDetails({ contract }: MonthlyContractDeta
                 </div>
                 
                 <div>
-                  <label className="text-sm font-medium text-gray-600">البريد الإلكتروني</label>
-                  <p className="text-lg text-gray-900">{contract.email}</p>
+                  <label className="text-sm font-medium text-gray-600">عنوان التوصيل</label>
+                  <p className="text-lg text-gray-900">{contract.deliveryAddress}</p>
                 </div>
                 
                 <div>

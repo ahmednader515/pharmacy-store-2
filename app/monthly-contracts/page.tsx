@@ -15,7 +15,7 @@ export default function MonthlyContractsPage() {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
-    email: '',
+    deliveryAddress: '',
     branch: '',
     medicineNames: ''
   })
@@ -137,17 +137,17 @@ export default function MonthlyContractsPage() {
                   />
                 </div>
 
-                {/* البريد الإلكتروني */}
+                {/* عنوان التوصيل */}
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-right">البريد الإلكتروني *</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
+                  <Label htmlFor="deliveryAddress" className="text-right">عنوان التوصيل *</Label>
+                  <Textarea
+                    id="deliveryAddress"
+                    name="deliveryAddress"
+                    value={formData.deliveryAddress}
                     onChange={handleInputChange}
                     required
-                    placeholder="أدخل البريد الإلكتروني"
+                    placeholder="أدخل عنوان التوصيل الكامل"
+                    rows={3}
                     className="text-right"
                   />
                 </div>

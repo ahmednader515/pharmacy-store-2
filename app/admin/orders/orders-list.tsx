@@ -30,7 +30,7 @@ type MonthlyContract = {
   id: string
   name: string
   phone: string
-  email: string
+  deliveryAddress: string
   branch: string
   medicineNames: string
   prescriptionUrl: string | null
@@ -237,7 +237,7 @@ export default function OrdersList({ orders, monthlyContracts, totalPages, curre
                     <TableCell className='py-4 px-4'>
                       <div>
                         <div className='font-medium'>{contract.name}</div>
-                        <div className='text-sm text-gray-500'>{contract.email}</div>
+                        <div className='text-sm text-gray-500'>{contract.deliveryAddress}</div>
                       </div>
                     </TableCell>
                     <TableCell className='py-4 px-4'>
@@ -298,7 +298,7 @@ export default function OrdersList({ orders, monthlyContracts, totalPages, curre
                 <div className="border-t border-blue-200 pt-3">
                   <div className="font-medium text-gray-900">{contract.name}</div>
                   <div className="text-sm text-gray-500">{contract.phone}</div>
-                  <div className="text-sm text-gray-500">{contract.email}</div>
+                  <div className="text-sm text-gray-500">{contract.deliveryAddress}</div>
                 </div>
 
                 {/* Branch Info */}

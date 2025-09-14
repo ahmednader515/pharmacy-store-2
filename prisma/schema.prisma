@@ -197,16 +197,16 @@ model WebPage {
 }
 
 model MonthlyContract {
-  id          String   @id @default(cuid())
-  name        String
-  phone       String
-  email       String
-  branch      String
-  medicineNames String
+  id              String   @id @default(cuid())
+  name            String
+  phone           String
+  deliveryAddress String
+  branch          String
+  medicineNames   String
   prescriptionUrl String?
-  status      String   @default("pending") // pending, approved, rejected
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  status          String   @default("pending") // pending, approved, rejected
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@map("monthly_contracts")
 }
