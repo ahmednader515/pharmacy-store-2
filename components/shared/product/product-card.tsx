@@ -25,20 +25,26 @@ const ProductCard = ({
     <div className="relative group">
       <Link href={`/product/${product.slug}`}>
         <div className="relative h-48 sm:h-56 md:h-64 w-full overflow-hidden rounded-lg bg-gray-50">
-          {product.images.length > 1 ? (
-            <ImageHover
-              src={product.images[0]}
-              hoverSrc={product.images[1]}
-              alt={product.name}
-            />
+          {product.images && product.images.length > 0 && product.images[0] ? (
+            product.images.length > 1 ? (
+              <ImageHover
+                src={product.images[0]}
+                hoverSrc={product.images[1]}
+                alt={product.name}
+              />
+            ) : (
+              <Image
+                src={product.images[0]}
+                alt={product.name}
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                className="object-contain transition-transform duration-300 group-hover:scale-105"
+              />
+            )
           ) : (
-            <Image
-              src={product.images[0]}
-              alt={product.name}
-              fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className="object-contain transition-transform duration-300 group-hover:scale-105"
-            />
+            <div className="w-full h-full flex items-center justify-center bg-gray-200">
+              <span className="text-gray-500 text-sm">لا توجد صورة</span>
+            </div>
           )}
           
           {/* Quick action buttons overlay */}

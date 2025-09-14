@@ -18,11 +18,11 @@ export default async function OrdersPage(props: {
     redirect('/')
   }
 
-  // Direct database query for orders
+  // Direct database query for orders and monthly contracts
   const pageSize = 10
   const skip = (Number(page) - 1) * pageSize
   
-  const [orders, totalOrders] = await Promise.all([
+  const [orders, monthlyContracts, totalOrders, totalContracts] = await Promise.all([
     prisma.order.findMany({
       skip,
       take: pageSize,
@@ -36,7 +36,13 @@ export default async function OrdersPage(props: {
         }
       }
     }),
-    prisma.order.count()
+    prisma.monthlyContract.findMany({
+      skip,
+      take: pageSize,
+      orderBy: { createdAt: 'desc' }
+    }),
+    prisma.order.count(),
+    prisma.monthlyContract.count()
   ])
 
   // Convert Decimal values to numbers for client components
@@ -48,11 +54,12 @@ export default async function OrdersPage(props: {
     totalPrice: Number(order.totalPrice),
   }))
 
-  const totalPages = Math.ceil(totalOrders / pageSize)
+  const totalPages = Math.ceil((totalOrders + totalContracts) / pageSize)
   
   return (
     <OrdersList 
       orders={normalizedOrders} 
+      monthlyContracts={monthlyContracts}
       totalPages={totalPages} 
       currentPage={Number(page)} 
     />

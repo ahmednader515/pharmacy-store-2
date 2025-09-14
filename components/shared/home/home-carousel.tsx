@@ -94,15 +94,21 @@ export default function HomeCarousel({ carousels }: HomeCarouselProps) {
       <div className="relative w-full h-[250px] sm:h-[300px] md:h-[400px] lg:h-[500px]">
         {/* Current Slide */}
         <div className="relative h-full w-full">
-          <Image
-            src={carousels[currentSlide].image}
-            alt={carousels[currentSlide].title}
-            fill
-            className={`object-cover transition-all duration-300 ease-in-out ${
-              isTransitioning ? 'blur-sm scale-105' : 'blur-none scale-100'
-            }`}
-            priority={currentSlide === 0}
-          />
+          {carousels[currentSlide].image ? (
+            <Image
+              src={carousels[currentSlide].image}
+              alt={carousels[currentSlide].title}
+              fill
+              className={`object-cover transition-all duration-300 ease-in-out ${
+                isTransitioning ? 'blur-sm scale-105' : 'blur-none scale-100'
+              }`}
+              priority={currentSlide === 0}
+            />
+          ) : (
+            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+              <span className="text-gray-500 text-lg">لا توجد صورة</span>
+            </div>
+          )}
           <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
             <div className="text-center text-white px-4">
               <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-5xl font-bold mb-3 sm:mb-4 font-cairo">

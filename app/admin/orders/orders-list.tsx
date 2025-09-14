@@ -26,13 +26,26 @@ type Order = {
   }
 }
 
+type MonthlyContract = {
+  id: string
+  name: string
+  phone: string
+  email: string
+  branch: string
+  medicineNames: string
+  prescriptionUrl: string | null
+  status: string
+  createdAt: Date
+}
+
 type OrdersListProps = {
   orders: Order[]
+  monthlyContracts: MonthlyContract[]
   totalPages: number
   currentPage: number
 }
 
-export default function OrdersList({ orders, totalPages, currentPage }: OrdersListProps) {
+export default function OrdersList({ orders, monthlyContracts, totalPages, currentPage }: OrdersListProps) {
   const { toast } = useToast()
 
   const handleDeleteOrder = async (id: string) => {
@@ -73,7 +86,7 @@ export default function OrdersList({ orders, totalPages, currentPage }: OrdersLi
 
   return (
     <div className='space-y-4 rtl text-right' style={{ fontFamily: 'Cairo, sans-serif' }}>
-      <h1 className='h1-bold'>الطلبات</h1>
+      <h1 className='h1-bold'>الطلبات والتعاقدات الشهرية</h1>
       
       {/* Desktop Table - Hidden on mobile */}
       <div className='hidden md:block overflow-x-auto'>
@@ -196,6 +209,117 @@ export default function OrdersList({ orders, totalPages, currentPage }: OrdersLi
           </div>
         ))}
       </div>
+
+      {/* Monthly Contracts Section */}
+      {monthlyContracts.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-xl font-bold text-blue-600 mb-4">التعاقدات الشهرية</h2>
+          
+          {/* Desktop Table for Monthly Contracts */}
+          <div className='hidden md:block overflow-x-auto mb-6'>
+            <Table className="admin-table border border-gray-300 rounded-lg overflow-hidden shadow-lg">
+              <TableHeader>
+                <TableRow className="bg-blue-100 border-b-2 border-blue-300">
+                  <TableHead className='text-right bg-blue-100 text-blue-800 font-semibold py-4 px-4'>التاريخ</TableHead>
+                  <TableHead className='text-right bg-blue-100 text-blue-800 font-semibold py-4 px-4'>الاسم</TableHead>
+                  <TableHead className='text-right bg-blue-100 text-blue-800 font-semibold py-4 px-4'>الهاتف</TableHead>
+                  <TableHead className='text-right bg-blue-100 text-blue-800 font-semibold py-4 px-4'>الفرع</TableHead>
+                  <TableHead className='text-right bg-blue-100 text-blue-800 font-semibold py-4 px-4'>الحالة</TableHead>
+                  <TableHead className='text-right bg-blue-100 text-blue-800 font-semibold py-4 px-4'>الإجراءات</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {monthlyContracts.map((contract) => (
+                  <TableRow key={contract.id} className="border-b border-gray-200">
+                    <TableCell className='py-4 px-4'>
+                      {formatDateTime(contract.createdAt).dateTime}
+                    </TableCell>
+                    <TableCell className='py-4 px-4'>
+                      <div>
+                        <div className='font-medium'>{contract.name}</div>
+                        <div className='text-sm text-gray-500'>{contract.email}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell className='py-4 px-4'>
+                      {contract.phone}
+                    </TableCell>
+                    <TableCell className='py-4 px-4'>
+                      {contract.branch}
+                    </TableCell>
+                    <TableCell className='py-4 px-4'>
+                      <span className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap ${
+                        contract.status === 'approved' 
+                          ? 'bg-green-100 text-green-800' 
+                          : contract.status === 'rejected'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {contract.status === 'approved' ? 'موافق عليه' : 
+                         contract.status === 'rejected' ? 'مرفوض' : 'قيد المراجعة'}
+                      </span>
+                    </TableCell>
+                    <TableCell className='py-4 px-4'>
+                      <div className='flex gap-2'>
+                        <Button asChild size='sm' variant="outline">
+                          <Link href={`/admin/monthly-contracts/${contract.id}`}>
+                            عرض التفاصيل
+                          </Link>
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Mobile Cards for Monthly Contracts */}
+          <div className='md:hidden space-y-4'>
+            {monthlyContracts.map((contract) => (
+              <div key={contract.id} className="bg-blue-50 border border-blue-200 rounded-lg shadow-sm p-4 space-y-3">
+                {/* Contract Header */}
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-500">
+                    {formatDateTime(contract.createdAt).dateTime}
+                  </div>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                    contract.status === 'approved' 
+                      ? 'bg-green-100 text-green-800' 
+                      : contract.status === 'rejected'
+                      ? 'bg-red-100 text-red-800'
+                      : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {contract.status === 'approved' ? 'موافق عليه' : 
+                     contract.status === 'rejected' ? 'مرفوض' : 'قيد المراجعة'}
+                  </span>
+                </div>
+
+                {/* Customer Info */}
+                <div className="border-t border-blue-200 pt-3">
+                  <div className="font-medium text-gray-900">{contract.name}</div>
+                  <div className="text-sm text-gray-500">{contract.phone}</div>
+                  <div className="text-sm text-gray-500">{contract.email}</div>
+                </div>
+
+                {/* Branch Info */}
+                <div className="border-t border-blue-200 pt-3">
+                  <div className="text-sm text-gray-600 mb-1">الفرع:</div>
+                  <div className="text-sm font-medium">{contract.branch}</div>
+                </div>
+
+                {/* Actions */}
+                <div className="border-t border-blue-200 pt-3">
+                  <Button asChild size='sm' className="w-full" variant="outline">
+                    <Link href={`/admin/monthly-contracts/${contract.id}`}>
+                      عرض التفاصيل
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       
       {/* Simple pagination */}
       {totalPages > 1 && (

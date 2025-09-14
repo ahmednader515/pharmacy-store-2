@@ -195,3 +195,18 @@ model WebPage {
 
   @@map("web_pages")
 }
+
+model MonthlyContract {
+  id          String   @id @default(cuid())
+  name        String
+  phone       String
+  email       String
+  branch      String
+  medicineNames String
+  prescriptionUrl String?
+  status      String   @default("pending") // pending, approved, rejected
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("monthly_contracts")
+}

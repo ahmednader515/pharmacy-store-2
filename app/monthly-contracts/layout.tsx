@@ -2,7 +2,7 @@ import Header from '@/components/shared/header'
 import Footer from '@/components/shared/footer'
 import WhatsAppButton from '@/components/shared/whatsapp-button'
 
-export default async function HomeLayout({
+export default function MonthlyContractsLayout({
   children,
 }: {
   children: React.ReactNode

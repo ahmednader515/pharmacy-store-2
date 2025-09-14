@@ -25,6 +25,19 @@ export const ourFileRouter = {
       // !!! Whatever is returned here is sent to the clientside `onClientUploadComplete` callback
       return { uploadedBy: metadata.userId }
     }),
+
+  // Prescription uploader for monthly contracts (no auth required)
+  prescriptionUploader: f({ 
+    image: { maxFileSize: '4MB' },
+    pdf: { maxFileSize: '4MB' }
+  })
+    .onUploadComplete(async ({ file }) => {
+      // This code RUNS ON YOUR SERVER after upload
+      console.log("Prescription uploaded:", file.ufsUrl)
+      
+      // Return the file URL for the client (using ufsUrl instead of deprecated url)
+      return { url: file.ufsUrl }
+    }),
 } satisfies FileRouter
 
 export type OurFileRouter = typeof ourFileRouter

@@ -95,6 +95,17 @@ export default function SidebarClient({
                   </Link>
                 </DrawerClose>
               ))}
+              
+              {/* Monthly Contracts Link */}
+              <DrawerClose asChild>
+                <Link
+                  href="/monthly-contracts"
+                  className="flex items-center justify-between p-3 rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm bg-blue-500"
+                >
+                  <span>التعاقدات الشهرية</span>
+                  <ChevronRight className="h-4 w-4" />
+                </Link>
+              </DrawerClose>
             </nav>
           </div>
 

@@ -44,6 +44,48 @@ export const toSlug = (text: string): string =>
     .replace(/^-+|-+$/g, '')
     .replace(/-+/g, '-')
 
+// Arabic-compatible slug generation function
+export const toSlugArabic = (text: string): string => {
+  if (!text) return ''
+  
+  // Arabic to English transliteration mapping
+  const arabicToEnglish: { [key: string]: string } = {
+    'ا': 'a', 'أ': 'a', 'إ': 'a', 'آ': 'a',
+    'ب': 'b', 'ت': 't', 'ث': 'th', 'ج': 'j',
+    'ح': 'h', 'خ': 'kh', 'د': 'd', 'ذ': 'th',
+    'ر': 'r', 'ز': 'z', 'س': 's', 'ش': 'sh',
+    'ص': 's', 'ض': 'd', 'ط': 't', 'ظ': 'z',
+    'ع': 'a', 'غ': 'gh', 'ف': 'f', 'ق': 'q',
+    'ك': 'k', 'ل': 'l', 'م': 'm', 'ن': 'n',
+    'ه': 'h', 'و': 'w', 'ي': 'y', 'ى': 'a',
+    'ة': 'h', 'ء': 'a', 'ؤ': 'w', 'ئ': 'y',
+    ' ': '-', '-': '-', '_': '-'
+  }
+  
+  // Convert Arabic characters to English equivalents
+  let slug = text
+    .split('')
+    .map(char => {
+      const lowerChar = char.toLowerCase()
+      return arabicToEnglish[lowerChar] || lowerChar
+    })
+    .join('')
+  
+  // Remove any remaining non-alphanumeric characters except hyphens
+  slug = slug.replace(/[^a-z0-9-]/gi, '')
+  
+  // Replace multiple spaces/hyphens with single hyphen
+  slug = slug.replace(/[\s-]+/g, '-')
+  
+  // Remove leading and trailing hyphens
+  slug = slug.replace(/^-+|-+$/g, '')
+  
+  // Remove multiple consecutive hyphens
+  slug = slug.replace(/-+/g, '-')
+  
+  return slug.toLowerCase()
+}
+
 const CURRENCY_FORMATTER = new Intl.NumberFormat('en-EG', {
   currency: 'EGP',
   style: 'currency',

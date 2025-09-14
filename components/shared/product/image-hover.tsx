@@ -29,24 +29,32 @@ const ImageHover = ({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <Image
-        src={src}
-        alt={alt}
-        fill
-        sizes='80vw'
-        className={`object-contain transition-opacity duration-500 ${
-          isHovered ? 'opacity-0' : 'opacity-100'
-        }`}
-      />
-      <Image
-        src={hoverSrc}
-        alt={alt}
-        fill
-        sizes='80vw'
-        className={`absolute inset-0 object-contain transition-opacity duration-500 ${
-          isHovered ? 'opacity-100' : 'opacity-0'
-        }`}
-      />
+      {src ? (
+        <Image
+          src={src}
+          alt={alt}
+          fill
+          sizes='80vw'
+          className={`object-contain transition-opacity duration-500 ${
+            isHovered ? 'opacity-0' : 'opacity-100'
+          }`}
+        />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center bg-gray-200">
+          <span className="text-gray-500 text-sm">لا توجد صورة</span>
+        </div>
+      )}
+      {hoverSrc && (
+        <Image
+          src={hoverSrc}
+          alt={alt}
+          fill
+          sizes='80vw'
+          className={`absolute inset-0 object-contain transition-opacity duration-500 ${
+            isHovered ? 'opacity-100' : 'opacity-0'
+          }`}
+        />
+      )}
     </div>
   )
 }

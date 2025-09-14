@@ -49,6 +49,16 @@ export default async function Header() {
   
   return (
     <header className="bg-white text-gray-800 font-cairo" dir="rtl">
+      {/* Promotional Banner */}
+      <div className="bg-blue-600 text-white py-2 px-4 text-center text-sm">
+        <p>
+          احصل علي ادويتك الشهرية من فروعنا و احنا هانوفرها كاملة و هانوفرلك النواقص من خلال{' '}
+          <Link href="/monthly-contracts" className="underline hover:text-blue-200 transition-colors">
+            التعاقدات الشهرية
+          </Link>
+        </p>
+      </div>
+      
       {/* Main Header - Clean Design */}
       <div className="bg-white border-b border-gray-200">
         <div className="container mx-auto px-4 py-4">

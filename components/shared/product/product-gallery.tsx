@@ -24,7 +24,13 @@ export default function ProductGallery({ images }: { images: string[] }) {
                 : 'ring-1 ring-gray-300'
             }`}
           >
-            <Image src={image} alt={'product image'} width={48} height={48} />
+            {image ? (
+              <Image src={image} alt={'product image'} width={48} height={48} />
+            ) : (
+              <div className="w-12 h-12 bg-gray-200 flex items-center justify-center">
+                <span className="text-gray-500 text-xs">IMG</span>
+              </div>
+            )}
           </button>
         ))}
       </div>
@@ -32,14 +38,20 @@ export default function ProductGallery({ images }: { images: string[] }) {
       <div className='w-full'>
         <Zoom>
           <div className='relative h-[500px]'>
-            <Image
-              src={images[selectedImage]}
-              alt={'product image'}
-              fill
-              sizes='90vw'
-              className='object-contain'
-              priority
-            />
+            {images[selectedImage] ? (
+              <Image
+                src={images[selectedImage]}
+                alt={'product image'}
+                fill
+                sizes='90vw'
+                className='object-contain'
+                priority
+              />
+            ) : (
+              <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                <span className="text-gray-500">لا توجد صورة</span>
+              </div>
+            )}
           </div>
         </Zoom>
       </div>

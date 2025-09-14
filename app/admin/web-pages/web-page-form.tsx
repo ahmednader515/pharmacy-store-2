@@ -29,9 +29,9 @@ import { toSlug } from '@/lib/utils'
 const webPageDefaultValues =
   process.env.NODE_ENV === 'development'
     ? {
-        title: 'Sample Page',
+        title: 'صفحة تجريبية',
         slug: 'sample-page',
-        content: 'Sample Content',
+        content: 'محتوى تجريبي',
       }
     : {
         title: '',
@@ -60,6 +60,7 @@ const WebPageForm = ({
   })
 
   const { toast } = useToast()
+
   async function onSubmit(values: z.infer<typeof WebPageInputSchema>) {
     if (type === 'Create') {
       const res = await createWebPage(values)
@@ -97,16 +98,26 @@ const WebPageForm = ({
 
   return (
     <Form {...form}>
-      <div className='space-y-8'>
+      <div className='space-y-8 rtl text-right' style={{ fontFamily: 'Cairo, sans-serif' }}>
         <div className='flex flex-col gap-5 md:flex-row'>
           <FormField
             control={form.control}
             name='title'
             render={({ field }) => (
               <FormItem className='w-full'>
-                <FormLabel>Title</FormLabel>
+                <FormLabel className='text-right'>العنوان</FormLabel>
                 <FormControl>
-                  <Input placeholder='Enter title' {...field} />
+                  <Input 
+                    placeholder='أدخل العنوان' 
+                    className='text-right' 
+                    {...field}
+                    onChange={(e) => {
+                      field.onChange(e)
+                      // Generate slug for both Create and Update modes
+                      const generatedSlug = toSlug(e.target.value)
+                      form.setValue('slug', generatedSlug)
+                    }}
+                  />
                 </FormControl>
 
                 <FormMessage />
@@ -119,25 +130,15 @@ const WebPageForm = ({
             name='slug'
             render={({ field }) => (
               <FormItem className='w-full'>
-                <FormLabel>Slug</FormLabel>
+                <FormLabel className='text-right'>الرابط</FormLabel>
 
                 <FormControl>
-                  <div className='relative'>
-                    <Input
-                      placeholder='Enter slug'
-                      className='pl-8'
-                      {...field}
-                    />
-                    <button
-                      type='button'
-                      onClick={() => {
-                        form.setValue('slug', toSlug(form.getValues('title')))
-                      }}
-                      className='absolute right-2 top-2.5'
-                    >
-                      Generate
-                    </button>
-                  </div>
+                  <Input
+                    placeholder='سيتم توليد الرابط تلقائياً من العنوان'
+                    className='text-right bg-gray-50'
+                    readOnly
+                    {...field}
+                  />
                 </FormControl>
 
                 <FormMessage />
@@ -151,17 +152,16 @@ const WebPageForm = ({
             name='content'
             render={({ field }) => (
               <FormItem className='w-full'>
-                <FormLabel>Content</FormLabel>
+                <FormLabel className='text-right'>المحتوى</FormLabel>
                 <FormControl>
                   <MdEditor
-                    // value={markdown}
                     {...field}
                     style={{ height: '500px' }}
                     renderHTML={(text) => <ReactMarkdown>{text}</ReactMarkdown>}
                     onChange={({ text }) => form.setValue('content', text)}
+                    view={{ menu: true, md: true, html: false }}
+                    canView={{ menu: true, md: true, html: false, fullScreen: true, hideMenu: false }}
                   />
-
-                  {/* <Textarea placeholder='Enter content' {...field} /> */}
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -173,14 +173,14 @@ const WebPageForm = ({
             control={form.control}
             name='isPublished'
             render={({ field }) => (
-              <FormItem className='space-x-2 items-center'>
+              <FormItem className='space-x-2 items-center flex-row-reverse'>
                 <FormControl>
                   <Checkbox
                     checked={field.value}
                     onCheckedChange={field.onChange}
                   />
                 </FormControl>
-                <FormLabel>Is Published?</FormLabel>
+                <FormLabel className='text-right'>منشور؟</FormLabel>
               </FormItem>
             )}
           />
@@ -194,9 +194,9 @@ const WebPageForm = ({
               const values = form.getValues()
               onSubmit(values)
             }}
-            className='button col-span-2 w-full'
+            className='button col-span-2 w-full bg-blue-600 hover:bg-blue-700 text-white'
           >
-            {form.formState.isSubmitting ? 'Submitting...' : `${type} Page`}
+            {form.formState.isSubmitting ? 'جاري الإرسال...' : `${type === 'Create' ? 'إنشاء' : 'تحديث'} الصفحة`}
           </Button>
         </div>
       </div>

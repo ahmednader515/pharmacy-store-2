@@ -31,7 +31,7 @@ import { IProductInput } from '@/types'
 import { UploadButton } from '@/lib/uploadthing'
 import { ProductInputSchema, ProductUpdateSchema } from '@/lib/validator'
 import { Checkbox } from '@/components/ui/checkbox'
-import { toSlug } from '@/lib/utils'
+import { toSlug, toSlugArabic } from '@/lib/utils'
 import { useLoading } from '@/hooks/use-loading'
 import { LoadingSpinner } from '@/components/shared/loading-overlay'
 
@@ -128,10 +128,10 @@ const ProductForm = ({
       return
     }
 
-    // Auto-generate slug from product name
+    // Auto-generate slug from product name using Arabic-compatible function
     const productData = {
       ...values,
-      slug: toSlug(values.name)
+      slug: toSlugArabic(values.name)
     }
 
     await withLoading(
@@ -199,6 +199,13 @@ const ProductForm = ({
                     <Input 
                       {...field} 
                       className='border-gray-300 bg-white text-gray-900 focus:border-blue-500 focus:ring-blue-500'
+                      onChange={(e) => {
+                        field.onChange(e)
+                        if (type === 'Create') {
+                          const generatedSlug = toSlugArabic(e.target.value)
+                          form.setValue('slug', generatedSlug)
+                        }
+                      }}
                     />
                   </FormControl>
 
@@ -207,6 +214,30 @@ const ProductForm = ({
               )}
             />
 
+            <FormField
+              control={form.control}
+              name='slug'
+              render={({ field }) => (
+                <FormItem className='w-full'>
+                  <FormLabel className='text-gray-900 font-semibold'>الرابط</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      className='border-gray-300 bg-gray-50 text-gray-600 focus:border-blue-500 focus:ring-blue-500'
+                      readOnly
+                      placeholder='سيتم توليد الرابط تلقائياً من اسم المنتج'
+                    />
+                  </FormControl>
+                  <p className='text-xs text-gray-500'>
+                    سيتم إنشاء الرابط تلقائياً من اسم المنتج
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className='flex flex-col gap-5 md:flex-row'>
             <FormField
               control={form.control}
               name='category'
@@ -328,7 +359,7 @@ const ProductForm = ({
                         <div className='grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4'>
                           {images.map((image: string, index: number) => (
                             <div
-                              key={image}
+                              key={image || `empty-${index}`}
                               className='relative group cursor-move transition-all duration-200 hover:scale-105'
                               draggable
                               onDragStart={(e) => {
@@ -355,13 +386,19 @@ const ProductForm = ({
                                 form.setValue('images', newImages)
                               }}
                             >
-                              <Image
-                                src={image}
-                                alt={`صورة المنتج ${index + 1}`}
-                                className='w-full h-24 object-cover object-center rounded-sm border'
-                                width={100}
-                                height={100}
-                              />
+                              {image ? (
+                                <Image
+                                  src={image}
+                                  alt={`صورة المنتج ${index + 1}`}
+                                  className='w-full h-24 object-cover object-center rounded-sm border'
+                                  width={100}
+                                  height={100}
+                                />
+                              ) : (
+                                <div className='w-full h-24 bg-gray-200 rounded-sm border flex items-center justify-center text-gray-500 text-xs'>
+                                  صورة فارغة
+                                </div>
+                              )}
                               <button
                                 type='button'
                                 onClick={() => {
