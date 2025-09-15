@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
@@ -9,6 +11,10 @@ import { formatNumber, generateId, round2 } from "@/lib/utils";
 import ProductPrice from "./product-price";
 import ImageHover from "./image-hover";
 import { Eye } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import useCartStore from "@/hooks/use-cart-store";
+import { useLoading } from "@/hooks/use-loading";
+import { LoadingSpinner } from "@/components/shared/loading-overlay";
 
 const ProductCard = ({
   product,
@@ -113,16 +119,58 @@ const ProductCard = ({
     </div>
   );
 
-  const AddButton = () => (
-    <div className="p-3 sm:p-4 pt-0">
-      <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 sm:py-2.5 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 text-sm sm:text-base">
-        <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01" />
-        </svg>
-        إضافة للسلة
-      </button>
-    </div>
-  );
+  const AddButton = () => {
+    const { addItem } = useCartStore();
+    const { toast } = useToast();
+    const { isLoading: isAddingToCart, withLoading } = useLoading();
+
+    const handleAddToCart = async () => {
+      await withLoading(
+        async () => {
+          await addItem({
+            product: product.id,
+            name: product.name,
+            slug: product.slug,
+            category: product.category,
+            image: product.images[0],
+            price: Number(product.price),
+            countInStock: product.countInStock,
+            color: product.colors[0] || '',
+            size: product.sizes[0] || '',
+            quantity: 1,
+            clientId: `${product.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          }, 1);
+
+          toast({
+            title: 'تمت الإضافة إلى السلة',
+            description: `تم إضافة ${product.name} إلى سلة التسوق الخاصة بك`,
+            variant: 'default',
+          });
+        }
+      );
+    };
+
+    return (
+      <div className="p-3 sm:p-4 pt-0">
+        <button 
+          onClick={handleAddToCart}
+          disabled={isAddingToCart}
+          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2 sm:py-2.5 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 text-sm sm:text-base"
+        >
+          {isAddingToCart ? (
+            <LoadingSpinner size="sm" />
+          ) : (
+            <>
+              <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01" />
+              </svg>
+              إضافة للسلة
+            </>
+          )}
+        </button>
+      </div>
+    );
+  };
 
   if (hideBorder) {
     return (
