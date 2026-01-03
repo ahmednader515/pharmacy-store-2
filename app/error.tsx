@@ -51,7 +51,7 @@ export default function Error({ error, reset }: ErrorProps) {
             Something went wrong
           </CardTitle>
           <CardDescription className="text-gray-600">
-            We encountered an unexpected error. Please try again.
+            We encountered an unexpected error. try again later.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
