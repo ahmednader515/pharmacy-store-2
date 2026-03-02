@@ -34,6 +34,7 @@ type MonthlyContract = {
   branch: string
   medicineNames: string
   prescriptionUrl: string | null
+  deliveryServiceTag?: string | null
   status: string
   createdAt: Date
 }
@@ -236,7 +237,14 @@ export default function OrdersList({ orders, monthlyContracts, totalPages, curre
                     </TableCell>
                     <TableCell className='py-4 px-4'>
                       <div>
-                        <div className='font-medium'>{contract.name}</div>
+                        <div className='font-medium flex flex-wrap items-center gap-2'>
+                          <span>{contract.name}</span>
+                          {contract.deliveryServiceTag === 'super_tawfeer' && (
+                            <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-600 text-white">
+                              سوبر توفير
+                            </span>
+                          )}
+                        </div>
                         <div className='text-sm text-gray-500'>{contract.deliveryAddress}</div>
                       </div>
                     </TableCell>
@@ -296,7 +304,14 @@ export default function OrdersList({ orders, monthlyContracts, totalPages, curre
 
                 {/* Customer Info */}
                 <div className="border-t border-blue-200 pt-3">
-                  <div className="font-medium text-gray-900">{contract.name}</div>
+                  <div className="font-medium text-gray-900 flex flex-wrap items-center gap-2">
+                    <span>{contract.name}</span>
+                    {contract.deliveryServiceTag === 'super_tawfeer' && (
+                      <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-600 text-white">
+                        سوبر توفير
+                      </span>
+                    )}
+                  </div>
                   <div className="text-sm text-gray-500">{contract.phone}</div>
                   <div className="text-sm text-gray-500">{contract.deliveryAddress}</div>
                 </div>

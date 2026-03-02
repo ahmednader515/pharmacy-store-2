@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, phone, deliveryAddress, branch, medicineNames, prescriptionUrl } = body
+    const { name, phone, deliveryAddress, branch, medicineNames, prescriptionUrl, deliveryServiceTag } = body
 
     // Validate required fields
     if (!name || !phone || !deliveryAddress || !branch || !medicineNames) {
@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
         branch,
         medicineNames,
         prescriptionUrl: prescriptionUrl || null,
+        deliveryServiceTag: typeof deliveryServiceTag === 'string' ? deliveryServiceTag : null,
         status: 'pending'
       }
     })

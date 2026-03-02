@@ -18,6 +18,7 @@ type MonthlyContract = {
   branch: string
   medicineNames: string
   prescriptionUrl: string | null
+  deliveryServiceTag?: string | null
   status: string
   createdAt: Date
   updatedAt: Date
@@ -148,6 +149,15 @@ export default function MonthlyContractDetails({ contract }: MonthlyContractDeta
                   <label className="text-sm font-medium text-gray-600">الفرع المفضل</label>
                   <p className="text-lg text-gray-900">{contract.branch}</p>
                 </div>
+
+                {contract.deliveryServiceTag === 'super_tawfeer' && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">نوع الخدمة</label>
+                    <div className="mt-1">
+                      <Badge className="bg-blue-600 hover:bg-blue-600 text-white">سوبر توفير</Badge>
+                    </div>
+                  </div>
+                )}
                 
                 <div>
                   <label className="text-sm font-medium text-gray-600">تاريخ الطلب</label>

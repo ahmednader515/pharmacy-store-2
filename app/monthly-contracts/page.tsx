@@ -6,10 +6,17 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import {
+  Dialog,
+  DialogContent,
+} from '@/components/ui/dialog'
 import { UploadButton } from '@/lib/uploadthing'
 import { useToast } from '@/hooks/use-toast'
 import { Loader2, X } from 'lucide-react'
 import Image from 'next/image'
+
+const SUPER_SAVE_TAG = 'super_tawfeer'
 
 export default function MonthlyContractsPage() {
   const [formData, setFormData] = useState({
@@ -21,6 +28,8 @@ export default function MonthlyContractsPage() {
   })
   const [prescriptionUrl, setPrescriptionUrl] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSuperSaveDialogOpen, setIsSuperSaveDialogOpen] = useState(false)
+  const [isSuperSaveConfirmed, setIsSuperSaveConfirmed] = useState(false)
   const { toast } = useToast()
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -43,7 +52,8 @@ export default function MonthlyContractsPage() {
         },
         body: JSON.stringify({
           ...formData,
-          prescriptionUrl
+          prescriptionUrl,
+          deliveryServiceTag: isSuperSaveConfirmed ? SUPER_SAVE_TAG : null,
         }),
       })
 
@@ -57,7 +67,7 @@ export default function MonthlyContractsPage() {
         setFormData({
           name: '',
           phone: '',
-          email: '',
+          deliveryAddress: '',
           branch: '',
           medicineNames: ''
         })
@@ -97,17 +107,101 @@ export default function MonthlyContractsPage() {
       {/* Form Section */}
       <div className="w-full py-8 px-4">
         <div className="max-w-4xl mx-auto">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-2xl font-bold text-right text-blue-600">
-                نموذج طلب التعاقد الشهري
-              </CardTitle>
-              <p className="text-right text-gray-600 mt-2">
-                يرجى ملء البيانات التالية لإتمام طلب التعاقد الشهري
-              </p>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6 text-right">
+          {/* Super Save banner */}
+          <button
+            type="button"
+            onClick={() => setIsSuperSaveDialogOpen(true)}
+            className="w-full mb-6 text-right"
+          >
+            <div className="relative overflow-hidden rounded-xl border bg-white shadow-sm hover:shadow-md transition-shadow">
+              <div className="absolute inset-0 bg-gradient-to-l from-blue-50 via-white to-white" />
+              <div className="relative p-4 sm:p-5 flex items-center justify-between gap-4">
+                <div className="flex flex-col items-start gap-2">
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-pink-600 hover:bg-pink-600 text-white">حصرياً</Badge>
+                    <span className="text-lg sm:text-xl font-bold text-gray-900">توصيل سوبر توفير</span>
+                  </div>
+                  <div className="text-sm sm:text-base text-gray-600">
+                    وفر حتى 15% وتوصيل مجاني خلال 3 أيام
+                  </div>
+                </div>
+                <div className="shrink-0">
+                  <div className="w-16 h-16 rounded-full bg-white border shadow flex items-center justify-center">
+                    <div className="text-center leading-tight">
+                      <div className="text-[11px] font-extrabold text-blue-700">BIG</div>
+                      <div className="text-[11px] font-extrabold text-blue-700">SAVE</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </button>
+
+          <Dialog open={isSuperSaveDialogOpen} onOpenChange={setIsSuperSaveDialogOpen}>
+            <DialogContent className="p-0 overflow-hidden max-w-md">
+              <div className="relative">
+                <div className="h-44 bg-gradient-to-br from-sky-50 to-blue-100 flex items-center justify-center">
+                  <div className="w-24 h-24 rounded-full bg-white shadow flex items-center justify-center border">
+                    <span className="text-blue-700 font-extrabold leading-tight text-center text-sm">
+                      BIG
+                      <br />
+                      SAVE
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-5 space-y-4 text-right">
+                  <div className="text-xl font-bold text-gray-900">ما خدمة سوبر توفير</div>
+                  <ul className="text-sm text-gray-700 space-y-2 list-disc pr-5">
+                    <li>وفر حتى 15% على طلبك</li>
+                    <li>توصيل مجاني</li>
+                    <li>توصيل خلال 3 أيام</li>
+                    <li>الحد الأدنى للطلب: 700 جنيه مصري</li>
+                    <li>اطلب أكثر من مرة بدون رسوم</li>
+                  </ul>
+                  <Button
+                    type="button"
+                    className="w-full"
+                    onClick={() => {
+                      setIsSuperSaveConfirmed(true)
+                      setIsSuperSaveDialogOpen(false)
+                    }}
+                  >
+                    مفهوم
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {!isSuperSaveConfirmed ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl font-bold text-right text-gray-900">
+                  أكمل بعد قراءة تفاصيل خدمة سوبر توفير
+                </CardTitle>
+                <p className="text-right text-gray-600 mt-2">
+                  اضغط على بانر <span className="font-semibold">توصيل سوبر توفير</span> ثم اختر <span className="font-semibold">مفهوم</span> لعرض النموذج.
+                </p>
+              </CardHeader>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <CardTitle className="text-2xl font-bold text-right text-blue-600">
+                    نموذج طلب التعاقد الشهري
+                  </CardTitle>
+                  <Badge className="bg-blue-600 hover:bg-blue-600 text-white">
+                    سوبر توفير
+                  </Badge>
+                </div>
+                <p className="text-right text-gray-600 mt-2">
+                  يرجى ملء البيانات التالية لإتمام طلب التعاقد الشهري
+                </p>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-6 text-right">
                 {/* الاسم */}
                 <div className="space-y-2">
                   <Label htmlFor="name" className="text-right">الاسم *</Label>
@@ -266,8 +360,9 @@ export default function MonthlyContractsPage() {
                   )}
                 </Button>
               </form>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
